@@ -20,6 +20,8 @@
             var cancelSource = new CancellationTokenSource();
             try
             {
+                if (File.Exists(resultPath)) 
+                    File.Delete(resultPath);
                 using (var fileWriteStream = new BufferedStream(File.OpenWrite(resultPath), 1024 * 64))
                 using (var readStream = new BufferedStream(File.OpenRead(sourcePath), 1024 * 64))
                 using (var cryptStream = new RCryptStream1Bit(fileWriteStream, false, key))
@@ -57,6 +59,8 @@
             var cancelSource = new CancellationTokenSource();
             try
             {
+                if (File.Exists(resultPath))
+                    File.Delete(resultPath);
                 using (var fileReadStream = new BufferedStream(File.OpenRead(sourcePath), 1024 * 64))
                 using (var readStream = new RCryptStream1Bit(fileReadStream, true, ReverseScramble(key)))
                 using (var writeStream = new BufferedStream(File.OpenWrite(resultPath), 1024 * 64))
@@ -92,6 +96,8 @@
             var cancelSource = new CancellationTokenSource();
             try
             {
+                if (File.Exists(resultPath))
+                    File.Delete(resultPath);
                 using (var fileWriteStream = new BufferedStream(File.OpenWrite(resultPath), 1024 * 64))
                 using (var readStream = new BufferedStream(File.OpenRead(sourcePath), 1024 * 64))
                 using (var cryptStream = new RCryptStream4Bit(fileWriteStream, false, key))
@@ -124,11 +130,15 @@
 
         public bool DecryptFile4BitMode(string sourcePath, string resultPath, string key)
         {
+            if (File.Exists(resultPath))
+                File.Delete(resultPath);
             key = HandleKey(key);
             Task? printProgressTask = null;
             var cancelSource = new CancellationTokenSource();
             try
             {
+                if (File.Exists(resultPath))
+                    File.Delete(resultPath);
                 using (var fileReadStream = new BufferedStream(File.OpenRead(sourcePath), 1024 * 64))
                 using (var readStream = new RCryptStream4Bit(fileReadStream, true, ReverseScramble(key)))
                 using (var writeStream = new BufferedStream(File.OpenWrite(resultPath), 1024 * 64))

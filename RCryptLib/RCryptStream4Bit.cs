@@ -142,6 +142,7 @@
         {
             _moves.Clear();
             int i = 0;
+            var sum = 0;
             Action<Action, Action> addMove = (Action move, Action antiMove) =>
             {
                 if (i + 1 == scramble.Length)
@@ -163,6 +164,7 @@
                         _moves.Add(move);
                         _moves.Add(move);
                     }
+                    sum += scramble[i];
                     ++i;
                 }
                 else
@@ -178,12 +180,11 @@
             dict['S'] = () => addMove(S, AntiS);
             dict['E'] = () => addMove(E, AntiE);
             dict['M'] = () => addMove(M, AntiM);
-            var sum = 0;
             for (i = 0; i < scramble.Length; ++i)
             {
-                sum += scramble[i];
                 if (dict.ContainsKey(scramble[i]))
                 {
+                    sum += scramble[i];
                     dict[scramble[i]]();
                 }
             }
