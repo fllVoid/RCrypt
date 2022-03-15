@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net6.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+
+		<!--<GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
+		<PublishReadyToRun>true</PublishReadyToRun>
+		<PublishSingleFile>true</PublishSingleFile>
+		<PublishTrimmed>true</PublishTrimmed>-->
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\RCryptLib\RCryptLib.csproj" />
+	</ItemGroup>
+
+</Project>
