@@ -17,7 +17,7 @@
         {
             key = HandleKey(key);
             Task? printProgressTask = null;
-            bool finish = false;
+            var cancelSource = new CancellationTokenSource();
             try
             {
                 using (var fileReadStream = File.OpenRead(sourcePath))
@@ -25,18 +25,9 @@
                 using (var readStream = new BufferedStream(fileReadStream, 1024))
                 using (var cryptStream = new RCryptStream1Bit(fileWriteStream, false, key))
                 {
+                    var progress = new Progress(fileReadStream);
                     if (_printProgress != null)
-                    {
-                        printProgressTask = new Task(() =>
-                        {
-                            while (!finish)
-                            {
-                                Thread.Sleep(250);
-                                _printProgress((double)fileReadStream.Position / fileReadStream.Length);
-                            }
-                        });
-                    }
-                    printProgressTask?.Start();
+                        printProgressTask = Task.Run(() => PrintProgress(cancelSource.Token, progress, _printProgress));
                     var buffer = new byte[6];
                     var read = 6;
                     while (!cryptStream.LastWrite)
@@ -46,24 +37,25 @@
                             cryptStream.LastWrite = true;
                         cryptStream.Write(buffer, 0, read);
                     }
-                    finish = true;
+                    cancelSource.Cancel();
                     printProgressTask?.Wait();
                     return true;
                 }
             }
             catch (Exception ex)
             {
-                finish = true;
+                cancelSource.Cancel();
                 printProgressTask?.Wait();
                 _errorOutput.WriteLine(ex.Message);
                 return false;
             }
-
         }
 
         public bool DecryptFile1BitMode(string sourcePath, string resultPath, string key)
         {
             key = HandleKey(key);
+            Task? printProgressTask = null;
+            var cancelSource = new CancellationTokenSource();
             try
             {
                 using (var fileReadStream = File.OpenRead(sourcePath))
@@ -71,6 +63,9 @@
                 using (var readStream = new RCryptStream1Bit(fileReadStream, true, ReverseScramble(key)))
                 using (var writeStream = new BufferedStream(fileWriteStream, 1024))
                 {
+                    var progress = new Progress(fileReadStream);
+                    if (_printProgress != null)
+                        printProgressTask = Task.Run(() => PrintProgress(cancelSource.Token, progress, _printProgress));
                     var buffer = new byte[6];
                     var read = 6;
                     while (fileReadStream.Length != fileReadStream.Position)
@@ -78,11 +73,15 @@
                         read = readStream.Read(buffer, 0, 6);
                         writeStream.Write(buffer, 0, read);
                     }
+                    cancelSource.Cancel();
+                    printProgressTask?.Wait();
                     return true;
                 }
             }
             catch (Exception ex)
             {
+                cancelSource.Cancel();
+                printProgressTask?.Wait();
                 _errorOutput.WriteLine(ex.Message);
                 return false;
             }
@@ -92,7 +91,7 @@
         {
             key = HandleKey(key);
             Task? printProgressTask = null;
-            bool finish = false;
+            var cancelSource = new CancellationTokenSource();
             try
             {
                 using (var fileReadStream = File.OpenRead(sourcePath))
@@ -100,18 +99,9 @@
                 using (var readStream = new BufferedStream(fileReadStream, 4096))
                 using (var cryptStream = new RCryptStream4Bit(fileWriteStream, false, key))
                 {
+                    var progress = new Progress(fileReadStream);
                     if (_printProgress != null)
-                    {
-                        printProgressTask = new Task(() =>
-                        {
-                            while (!finish)
-                            {
-                                Thread.Sleep(250);
-                                _printProgress((double)fileReadStream.Position / fileReadStream.Length);
-                            }
-                        });
-                    }
-                    printProgressTask?.Start();
+                        printProgressTask = Task.Run(() => PrintProgress(cancelSource.Token, progress, _printProgress));
                     var buffer = new byte[24];
                     var read = 24;
                     while (!cryptStream.LastWrite)
@@ -121,24 +111,25 @@
                             cryptStream.LastWrite = true;
                         cryptStream.Write(buffer, 0, read);
                     }
-                    finish = true;
+                    cancelSource.Cancel();
                     printProgressTask?.Wait();
                     return true;
                 }
             }
             catch (Exception ex)
             {
-                finish = true;
+                cancelSource.Cancel();
                 printProgressTask?.Wait();
                 _errorOutput.WriteLine(ex.Message);
                 return false;
             }
-
         }
 
         public bool DecryptFile4BitMode(string sourcePath, string resultPath, string key)
         {
             key = HandleKey(key);
+            Task? printProgressTask = null;
+            var cancelSource = new CancellationTokenSource();
             try
             {
                 using (var fileReadStream = File.OpenRead(sourcePath))
@@ -146,6 +137,9 @@
                 using (var readStream = new RCryptStream4Bit(fileReadStream, true, ReverseScramble(key)))
                 using (var writeStream = new BufferedStream(fileWriteStream, 4096))
                 {
+                    var progress = new Progress(fileReadStream);
+                    if (_printProgress != null)
+                        printProgressTask = Task.Run(() => PrintProgress(cancelSource.Token, progress, _printProgress));
                     var buffer = new byte[24];
                     var read = 24;
                     while (fileReadStream.Length != fileReadStream.Position)
@@ -153,13 +147,26 @@
                         read = readStream.Read(buffer, 0, 24);
                         writeStream.Write(buffer, 0, read);
                     }
+                    cancelSource.Cancel();
+                    printProgressTask?.Wait();
                     return true;
                 }
             }
             catch (Exception ex)
             {
+                cancelSource.Cancel();
+                printProgressTask?.Wait();
                 _errorOutput.WriteLine(ex.Message);
                 return false;
+            }
+        }
+
+        private void PrintProgress(CancellationToken token, Progress progress, Action<double> printFunc)
+        {
+            while (!token.IsCancellationRequested)
+            {
+                Thread.Sleep(250);
+                printFunc(progress.Get);
             }
         }
 
@@ -202,6 +209,15 @@
                 }
             }
             return new string(outKey);
+        }
+
+        private class Progress
+        {
+            Stream _stream;
+
+            public Progress(Stream stream) => _stream = stream;
+
+            public double Get => (double)_stream.Position / _stream.Length;
         }
     }
 }

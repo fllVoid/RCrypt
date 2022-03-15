@@ -36,7 +36,6 @@
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-
             _stream.Read(buffer, offset, 24);
             var cubeBytes = new CubeBytes
             {
