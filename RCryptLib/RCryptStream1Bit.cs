@@ -92,7 +92,12 @@
         private int _numIndex;
         private int _offset;
 
-        public Cube1Bit(bool decrypt) => _decryptMode = decrypt;
+        public Cube1Bit(bool decrypt)
+        {
+            _decryptMode = decrypt;
+            _numIndex = _decryptMode ? _nums.Count - 1 : 0;
+            _offset = _decryptMode ? -1 : 1;
+        }
 
         public void Init(byte b1, byte b2, byte b3, byte b4, byte b5, byte b6)
         {
@@ -160,8 +165,6 @@
 
         public byte[] DoScramble()
         {
-            _numIndex = _decryptMode ? _nums.Count - 1 : 0;
-            _offset = _decryptMode ? -1 : 1;
             var count = _moves.Count;
             for (int i = 0; i < count; ++i)
             {
@@ -175,12 +178,13 @@
             var maskGet = 0b10010100;
             var maskClear = 0b01101011;
             byte tus, tfs, tbs, tds;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                tus = (byte)(_bytes[0] - _nums[_numIndex]);
-                tfs = (byte)(_bytes[2] - _nums[_numIndex]);
-                tbs = (byte)(_bytes[4] - _nums[_numIndex]);
-                tds = (byte)(_bytes[5] - _nums[_numIndex]);
+                tus = (byte)(_bytes[0] - mud);
+                tfs = (byte)(_bytes[2] - mud);
+                tbs = (byte)(_bytes[4] - mud);
+                tds = (byte)(_bytes[5] - mud);
 
                 _bytes[4] = (byte)(tbs & maskClear | maskGet & tus);
 
@@ -197,13 +201,13 @@
                 tbs = _bytes[4];
                 tds = _bytes[5];
 
-                _bytes[4] = (byte)((tbs & maskClear | maskGet & tus) + _nums[_numIndex]);
+                _bytes[4] = (byte)((tbs & maskClear | maskGet & tus) + mud);
 
-                _bytes[5] = (byte)((tds & maskClear | maskGet & tbs) + _nums[_numIndex]);
+                _bytes[5] = (byte)((tds & maskClear | maskGet & tbs) + mud);
 
-                _bytes[2] = (byte)((tfs & maskClear | maskGet & tds) + _nums[_numIndex]);
+                _bytes[2] = (byte)((tfs & maskClear | maskGet & tds) + mud);
 
-                _bytes[0] = (byte)((tus & maskClear | maskGet & tfs) + _nums[_numIndex]);
+                _bytes[0] = (byte)((tus & maskClear | maskGet & tfs) + mud);
             }
             _numIndex += _offset;
             //---------------------
@@ -215,12 +219,13 @@
             var maskGet = 0b00101001;
             var maskClear = 0b11010110;//check
             byte tus, tfs, tbs, tds;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                tus = (byte)(_bytes[0] - _nums[_numIndex]);
-                tfs = (byte)(_bytes[2] - _nums[_numIndex]);
-                tbs = (byte)(_bytes[4] - _nums[_numIndex]);
-                tds = (byte)(_bytes[5] - _nums[_numIndex]);
+                tus = (byte)(_bytes[0] - mud);
+                tfs = (byte)(_bytes[2] - mud);
+                tbs = (byte)(_bytes[4] - mud);
+                tds = (byte)(_bytes[5] - mud);
                 _bytes[2] = (byte)(tfs & maskClear | maskGet & tus);
 
                 _bytes[5] = (byte)(tds & maskClear | maskGet & tfs);
@@ -235,13 +240,13 @@
                 tfs = _bytes[2];
                 tbs = _bytes[4];
                 tds = _bytes[5];
-                _bytes[2] = (byte)((tfs & maskClear | maskGet & tus) + _nums[_numIndex]);
+                _bytes[2] = (byte)((tfs & maskClear | maskGet & tus) + mud);
 
-                _bytes[5] = (byte)((tds & maskClear | maskGet & tfs) + _nums[_numIndex]);
+                _bytes[5] = (byte)((tds & maskClear | maskGet & tfs) + mud);
 
-                _bytes[4] = (byte)((tbs & maskClear | maskGet & tds) + _nums[_numIndex]);
+                _bytes[4] = (byte)((tbs & maskClear | maskGet & tds) + mud);
 
-                _bytes[0] = (byte)((tus & maskClear | maskGet & tbs) + _nums[_numIndex]);
+                _bytes[0] = (byte)((tus & maskClear | maskGet & tbs) + mud);
             }
             _numIndex += _offset;
             //---------------------
@@ -255,12 +260,13 @@
             var maskClearForL = 0b01101011;
             var maskClearForU = 0b00011111;
             byte tus, tls, trs, tds;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                tus = (byte)(_bytes[0] - _nums[_numIndex]);
-                tls = (byte)(_bytes[1] - _nums[_numIndex]);
-                trs = (byte)(_bytes[3] - _nums[_numIndex]);
-                tds = (byte)(_bytes[5] - _nums[_numIndex]);
+                tus = (byte)(_bytes[0] - mud);
+                tls = (byte)(_bytes[1] - mud);
+                trs = (byte)(_bytes[3] - mud);
+                tds = (byte)(_bytes[5] - mud);
                 _bytes[3] = (byte)(trs & maskClearForR | tus >> 5 & 0b00000001 | tus >> 3 & 0b00001000 | tus >> 2 & 0b00100000);
 
                 _bytes[5] = (byte)(tds & maskClearForD | trs >> 5 & 0b00000001 | trs >> 2 & 0b00000010 | trs << 2 & 0b00000100);
@@ -275,13 +281,13 @@
                 tls = _bytes[1];
                 trs = _bytes[3];
                 tds = _bytes[5];
-                _bytes[3] = (byte)((trs & maskClearForR | tus >> 5 & 0b00000001 | tus >> 3 & 0b00001000 | tus >> 2 & 0b00100000) + _nums[_numIndex]);
+                _bytes[3] = (byte)((trs & maskClearForR | tus >> 5 & 0b00000001 | tus >> 3 & 0b00001000 | tus >> 2 & 0b00100000) + mud);
 
-                _bytes[5] = (byte)((tds & maskClearForD | trs >> 5 & 0b00000001 | trs >> 2 & 0b00000010 | trs << 2 & 0b00000100) + _nums[_numIndex]);
+                _bytes[5] = (byte)((tds & maskClearForD | trs >> 5 & 0b00000001 | trs >> 2 & 0b00000010 | trs << 2 & 0b00000100) + mud);
 
-                _bytes[1] = (byte)((tls & maskClearForL | tds << 2 & 0b00000100 | tds << 3 & 0b00010000 | tds << 5 & 0b10000000) + _nums[_numIndex]);
+                _bytes[1] = (byte)((tls & maskClearForL | tds << 2 & 0b00000100 | tds << 3 & 0b00010000 | tds << 5 & 0b10000000) + mud);
 
-                _bytes[0] = (byte)((tus & maskClearForU | tls << 5 & 0b10000000 | tls << 2 & 0b01000000 | tls >> 2 & 0b00100000) + _nums[_numIndex]);
+                _bytes[0] = (byte)((tus & maskClearForU | tls << 5 & 0b10000000 | tls << 2 & 0b01000000 | tls >> 2 & 0b00100000) + mud);
             }
             _numIndex += _offset;
             //---------------------
@@ -295,12 +301,13 @@
             var maskClearForL = 0b11010110;
             var maskClearForU = 0b11111000;
             byte tus, tls, trs, tds;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                tus = (byte)(_bytes[0] - _nums[_numIndex]);
-                tls = (byte)(_bytes[1] - _nums[_numIndex]);
-                trs = (byte)(_bytes[3] - _nums[_numIndex]);
-                tds = (byte)(_bytes[5] - _nums[_numIndex]);
+                tus = (byte)(_bytes[0] - mud);
+                tls = (byte)(_bytes[1] - mud);
+                trs = (byte)(_bytes[3] - mud);
+                tds = (byte)(_bytes[5] - mud);
                 _bytes[3] = (byte)(trs & maskClearForR | tds >> 5 & 0b00000100 | tds >> 2 & 0b00010000 | tds << 2 & 0b10000000);
 
                 _bytes[5] = (byte)(tds & maskClearForD | tls << 2 & 0b10000000 | tls << 3 & 0b01000000 | tls << 5 & 0b00100000);
@@ -315,13 +322,13 @@
                 tls = _bytes[1];
                 trs = _bytes[3];
                 tds = _bytes[5];
-                _bytes[3] = (byte)((trs & maskClearForR | tds >> 5 & 0b00000100 | tds >> 2 & 0b00010000 | tds << 2 & 0b10000000) + _nums[_numIndex]);
+                _bytes[3] = (byte)((trs & maskClearForR | tds >> 5 & 0b00000100 | tds >> 2 & 0b00010000 | tds << 2 & 0b10000000) + mud);
 
-                _bytes[5] = (byte)((tds & maskClearForD | tls << 2 & 0b10000000 | tls << 3 & 0b01000000 | tls << 5 & 0b00100000) + _nums[_numIndex]);
+                _bytes[5] = (byte)((tds & maskClearForD | tls << 2 & 0b10000000 | tls << 3 & 0b01000000 | tls << 5 & 0b00100000) + mud);
 
-                _bytes[1] = (byte)((tls & maskClearForL | tus << 5 & 0b00100000 | tus << 2 & 0b00001000 | tus >> 2 & 0b00000001) + _nums[_numIndex]);
+                _bytes[1] = (byte)((tls & maskClearForL | tus << 5 & 0b00100000 | tus << 2 & 0b00001000 | tus >> 2 & 0b00000001) + mud);
 
-                _bytes[0] = (byte)((tus & maskClearForU | trs >> 2 & 0b00000001 | trs >> 3 & 0b00000010 | trs >> 5 & 0b00000100) + _nums[_numIndex]);
+                _bytes[0] = (byte)((tus & maskClearForU | trs >> 2 & 0b00000001 | trs >> 3 & 0b00000010 | trs >> 5 & 0b00000100) + mud);
             }
             _numIndex += _offset;
             //---------------------
@@ -333,12 +340,13 @@
             var maskClearForRFL = 0b11111000;
             var maskClearForB = 0b00011111;
             byte trs, tls, tfs, tbs;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                trs = (byte)(_bytes[3] - _nums[_numIndex]);
-                tls = (byte)(_bytes[1] - _nums[_numIndex]);
-                tfs = (byte)(_bytes[2] - _nums[_numIndex]);
-                tbs = (byte)(_bytes[4] - _nums[_numIndex]);
+                trs = (byte)(_bytes[3] - mud);
+                tls = (byte)(_bytes[1] - mud);
+                tfs = (byte)(_bytes[2] - mud);
+                tbs = (byte)(_bytes[4] - mud);
                 _bytes[3] = (byte)(trs & maskClearForRFL | tbs >> 7 & 0b00000001 | tbs >> 5 & 0b00000010 | tbs >> 3 & 0b00000100);
 
                 _bytes[4] = (byte)(tbs & maskClearForB | tls << 7 & 0b10000000 | tls << 5 & 0b01000000 | tls << 3 & 0b00100000);
@@ -353,13 +361,13 @@
                 tls = _bytes[1];
                 tfs = _bytes[2];
                 tbs = _bytes[4];
-                _bytes[3] = (byte)((trs & maskClearForRFL | tbs >> 7 & 0b00000001 | tbs >> 5 & 0b00000010 | tbs >> 3 & 0b00000100) + _nums[_numIndex]);
+                _bytes[3] = (byte)((trs & maskClearForRFL | tbs >> 7 & 0b00000001 | tbs >> 5 & 0b00000010 | tbs >> 3 & 0b00000100) + mud);
 
-                _bytes[4] = (byte)((tbs & maskClearForB | tls << 7 & 0b10000000 | tls << 5 & 0b01000000 | tls << 3 & 0b00100000) + _nums[_numIndex]);
+                _bytes[4] = (byte)((tbs & maskClearForB | tls << 7 & 0b10000000 | tls << 5 & 0b01000000 | tls << 3 & 0b00100000) + mud);
 
-                _bytes[1] = (byte)((tls & maskClearForRFL | tfs & 0b00000111) + _nums[_numIndex]);
+                _bytes[1] = (byte)((tls & maskClearForRFL | tfs & 0b00000111) + mud);
 
-                _bytes[2] = (byte)((tfs & maskClearForRFL | trs & 0b00000111) + _nums[_numIndex]);
+                _bytes[2] = (byte)((tfs & maskClearForRFL | trs & 0b00000111) + mud);
             }
             _numIndex += _offset;
             //---------------------
@@ -371,12 +379,13 @@
             var maskClearForRFL = 0b00011111;
             var maskClearForB = 0b11111000;
             byte trs, tls, tfs, tbs;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                trs = (byte)(_bytes[3] - _nums[_numIndex]);
-                tls = (byte)(_bytes[1] - _nums[_numIndex]);
-                tfs = (byte)(_bytes[2] - _nums[_numIndex]);
-                tbs = (byte)(_bytes[4] - _nums[_numIndex]);
+                trs = (byte)(_bytes[3] - mud);
+                tls = (byte)(_bytes[1] - mud);
+                tfs = (byte)(_bytes[2] - mud);
+                tbs = (byte)(_bytes[4] - mud);
                 _bytes[1] = (byte)(tls & maskClearForRFL | tbs << 7 & 0b10000000 | tbs << 5 & 0b01000000 | tbs << 3 & 0b00100000);
 
                 _bytes[4] = (byte)(tbs & maskClearForB | trs >> 7 & 0b00000001 | trs >> 5 & 0b00000010 | trs >> 3 & 0b00000100);
@@ -391,13 +400,13 @@
                 tls = _bytes[1];
                 tfs = _bytes[2];
                 tbs = _bytes[4];
-                _bytes[1] = (byte)((tls & maskClearForRFL | tbs << 7 & 0b10000000 | tbs << 5 & 0b01000000 | tbs << 3 & 0b00100000) + _nums[_numIndex]);
+                _bytes[1] = (byte)((tls & maskClearForRFL | tbs << 7 & 0b10000000 | tbs << 5 & 0b01000000 | tbs << 3 & 0b00100000) + mud);
 
-                _bytes[4] = (byte)((tbs & maskClearForB | trs >> 7 & 0b00000001 | trs >> 5 & 0b00000010 | trs >> 3 & 0b00000100) + _nums[_numIndex]);
+                _bytes[4] = (byte)((tbs & maskClearForB | trs >> 7 & 0b00000001 | trs >> 5 & 0b00000010 | trs >> 3 & 0b00000100) + mud);
 
-                _bytes[3] = (byte)((trs & maskClearForRFL | tfs & 0b11100000) + _nums[_numIndex]);
+                _bytes[3] = (byte)((trs & maskClearForRFL | tfs & 0b11100000) + mud);
 
-                _bytes[2] = (byte)((tfs & maskClearForRFL | tls & 0b11100000) + _nums[_numIndex]);
+                _bytes[2] = (byte)((tfs & maskClearForRFL | tls & 0b11100000) + mud);
             }
             _numIndex += _offset;
             //---------------------
@@ -409,12 +418,13 @@
             var maskGet = 0b10010100;
             var maskClear = 0b01101011;
             byte tus, tfs, tbs, tds;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                tus = (byte)(_bytes[0] - _nums[_numIndex]);
-                tfs = (byte)(_bytes[2] - _nums[_numIndex]);
-                tbs = (byte)(_bytes[4] - _nums[_numIndex]);
-                tds = (byte)(_bytes[5] - _nums[_numIndex]);
+                tus = (byte)(_bytes[0] - mud);
+                tfs = (byte)(_bytes[2] - mud);
+                tbs = (byte)(_bytes[4] - mud);
+                tds = (byte)(_bytes[5] - mud);
 
                 _bytes[2] = (byte)(tfs & maskClear | maskGet & tus);
 
@@ -431,13 +441,13 @@
                 tbs = _bytes[4];
                 tds = _bytes[5];
 
-                _bytes[2] = (byte)((tfs & maskClear | maskGet & tus) + _nums[_numIndex]);
+                _bytes[2] = (byte)((tfs & maskClear | maskGet & tus) + mud);
 
-                _bytes[5] = (byte)((tds & maskClear | maskGet & tfs) + _nums[_numIndex]);
+                _bytes[5] = (byte)((tds & maskClear | maskGet & tfs) + mud);
 
-                _bytes[4] = (byte)((tbs & maskClear | maskGet & tds) + _nums[_numIndex]);
+                _bytes[4] = (byte)((tbs & maskClear | maskGet & tds) + mud);
 
-                _bytes[0] = (byte)((tus & maskClear | maskGet & tbs) + _nums[_numIndex]);
+                _bytes[0] = (byte)((tus & maskClear | maskGet & tbs) + mud);
             }
             _numIndex += _offset;
             //---------------------
@@ -449,12 +459,13 @@
             var maskGet = 0b00101001;
             var maskClear = 0b11010110;//check
             byte tus, tfs, tbs, tds;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                tus = (byte)(_bytes[0] - _nums[_numIndex]);
-                tfs = (byte)(_bytes[2] - _nums[_numIndex]);
-                tbs = (byte)(_bytes[4] - _nums[_numIndex]);
-                tds = (byte)(_bytes[5] - _nums[_numIndex]);
+                tus = (byte)(_bytes[0] - mud);
+                tfs = (byte)(_bytes[2] - mud);
+                tbs = (byte)(_bytes[4] - mud);
+                tds = (byte)(_bytes[5] - mud);
                 _bytes[2] = (byte)(tfs & maskClear | maskGet & tds);
 
                 _bytes[0] = (byte)(tus & maskClear | maskGet & tfs);
@@ -469,13 +480,13 @@
                 tfs = _bytes[2];
                 tbs = _bytes[4];
                 tds = _bytes[5];
-                _bytes[2] = (byte)((tfs & maskClear | maskGet & tds) + _nums[_numIndex]);
+                _bytes[2] = (byte)((tfs & maskClear | maskGet & tds) + mud);
 
-                _bytes[0] = (byte)((tus & maskClear | maskGet & tfs) + _nums[_numIndex]);
+                _bytes[0] = (byte)((tus & maskClear | maskGet & tfs) + mud);
 
-                _bytes[4] = (byte)((tbs & maskClear | maskGet & tus) + _nums[_numIndex]);
+                _bytes[4] = (byte)((tbs & maskClear | maskGet & tus) + mud);
 
-                _bytes[5] = (byte)((tds & maskClear | maskGet & tbs) + _nums[_numIndex]);
+                _bytes[5] = (byte)((tds & maskClear | maskGet & tbs) + mud);
             }
             _numIndex += _offset;
             //---------------------
@@ -489,12 +500,13 @@
             var maskClearForL = 0b01101011;
             var maskClearForU = 0b00011111;
             byte tus, tls, trs, tds;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                tus = (byte)(_bytes[0] - _nums[_numIndex]);
-                tls = (byte)(_bytes[1] - _nums[_numIndex]);
-                trs = (byte)(_bytes[3] - _nums[_numIndex]);
-                tds = (byte)(_bytes[5] - _nums[_numIndex]);
+                tus = (byte)(_bytes[0] - mud);
+                tls = (byte)(_bytes[1] - mud);
+                trs = (byte)(_bytes[3] - mud);
+                tds = (byte)(_bytes[5] - mud);
 
                 _bytes[1] = (byte)(tls & maskClearForL | tus << 2 & 0b10000000 | tus >> 2 & 0b00010000 | tus >> 5 & 0b00000100);
 
@@ -511,13 +523,13 @@
                 trs = _bytes[3];
                 tds = _bytes[5];
 
-                _bytes[1] = (byte)((tls & maskClearForL | tus << 2 & 0b10000000 | tus >> 2 & 0b00010000 | tus >> 5 & 0b00000100) + _nums[_numIndex]);
+                _bytes[1] = (byte)((tls & maskClearForL | tus << 2 & 0b10000000 | tus >> 2 & 0b00010000 | tus >> 5 & 0b00000100) + mud);
 
-                _bytes[5] = (byte)((tds & maskClearForD | tls >> 5 & 0b00000100 | tls >> 3 & 0b00000010 | tls >> 2 & 0b00000001) + _nums[_numIndex]);
+                _bytes[5] = (byte)((tds & maskClearForD | tls >> 5 & 0b00000100 | tls >> 3 & 0b00000010 | tls >> 2 & 0b00000001) + mud);
 
-                _bytes[3] = (byte)((trs & maskClearForR | tds >> 2 & 0b00000001 | tds << 2 & 0b00001000 | tds << 5 & 0b00100000) + _nums[_numIndex]);
+                _bytes[3] = (byte)((trs & maskClearForR | tds >> 2 & 0b00000001 | tds << 2 & 0b00001000 | tds << 5 & 0b00100000) + mud);
 
-                _bytes[0] = (byte)((tus & maskClearForU | trs << 5 & 0b00100000 | trs << 3 & 0b01000000 | trs << 2 & 0b10000000) + _nums[_numIndex]);
+                _bytes[0] = (byte)((tus & maskClearForU | trs << 5 & 0b00100000 | trs << 3 & 0b01000000 | trs << 2 & 0b10000000) + mud);
             }
             _numIndex += _offset;
             //---------------------
@@ -531,12 +543,13 @@
             var maskClearForL = 0b11010110;
             var maskClearForU = 0b11111000;
             byte tus, tls, trs, tds;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                tus = (byte)(_bytes[0] - _nums[_numIndex]);
-                tls = (byte)(_bytes[1] - _nums[_numIndex]);
-                trs = (byte)(_bytes[3] - _nums[_numIndex]);
-                tds = (byte)(_bytes[5] - _nums[_numIndex]);
+                tus = (byte)(_bytes[0] - mud);
+                tls = (byte)(_bytes[1] - mud);
+                trs = (byte)(_bytes[3] - mud);
+                tds = (byte)(_bytes[5] - mud);
                 _bytes[3] = (byte)(trs & maskClearForR | tus << 5 & 0b10000000 | tus << 3 & 0b00010000 | tus << 2 & 0b00000100);
 
                 _bytes[5] = (byte)(tds & maskClearForD | trs >> 2 & 0b00100000 | trs << 2 & 0b01000000 | trs << 5 & 0b10000000);
@@ -551,13 +564,13 @@
                 tls = _bytes[1];
                 trs = _bytes[3];
                 tds = _bytes[5];
-                _bytes[3] = (byte)((trs & maskClearForR | tus << 5 & 0b10000000 | tus << 3 & 0b00010000 | tus << 2 & 0b00000100) + _nums[_numIndex]);
+                _bytes[3] = (byte)((trs & maskClearForR | tus << 5 & 0b10000000 | tus << 3 & 0b00010000 | tus << 2 & 0b00000100) + mud);
 
-                _bytes[5] = (byte)((tds & maskClearForD | trs >> 2 & 0b00100000 | trs << 2 & 0b01000000 | trs << 5 & 0b10000000) + _nums[_numIndex]);
+                _bytes[5] = (byte)((tds & maskClearForD | trs >> 2 & 0b00100000 | trs << 2 & 0b01000000 | trs << 5 & 0b10000000) + mud);
 
-                _bytes[1] = (byte)((tls & maskClearForL | tds >> 5 & 0b00000001 | tds >> 3 & 0b00001000 | tds >> 2 & 0b00100000) + _nums[_numIndex]);
+                _bytes[1] = (byte)((tls & maskClearForL | tds >> 5 & 0b00000001 | tds >> 3 & 0b00001000 | tds >> 2 & 0b00100000) + mud);
 
-                _bytes[0] = (byte)((tus & maskClearForU | tls << 2 & 0b00000100 | tls >> 2 & 0b00000010 | tls >> 5 & 0b00000001) + _nums[_numIndex]);
+                _bytes[0] = (byte)((tus & maskClearForU | tls << 2 & 0b00000100 | tls >> 2 & 0b00000010 | tls >> 5 & 0b00000001) + mud);
             }
             _numIndex += _offset;
             //---------------------
@@ -569,12 +582,13 @@
             var maskClearForRFL = 0b11111000;
             var maskClearForB = 0b00011111;
             byte trs, tls, tfs, tbs;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                trs = (byte)(_bytes[3] - _nums[_numIndex]);
-                tls = (byte)(_bytes[1] - _nums[_numIndex]);
-                tfs = (byte)(_bytes[2] - _nums[_numIndex]);
-                tbs = (byte)(_bytes[4] - _nums[_numIndex]);
+                trs = (byte)(_bytes[3] - mud);
+                tls = (byte)(_bytes[1] - mud);
+                tfs = (byte)(_bytes[2] - mud);
+                tbs = (byte)(_bytes[4] - mud);
                 _bytes[1] = (byte)(tls & maskClearForRFL | tbs >> 3 & 0b00000100 | tbs >> 5 & 0b00000010 | tbs >> 7 & 0b00000001);
 
                 _bytes[2] = (byte)(tfs & maskClearForRFL | tls & 0b00000111);
@@ -589,13 +603,13 @@
                 tls = _bytes[1];
                 tfs = _bytes[2];
                 tbs = _bytes[4];
-                _bytes[1] = (byte)((tls & maskClearForRFL | tbs >> 3 & 0b00000100 | tbs >> 5 & 0b00000010 | tbs >> 7 & 0b00000001) + _nums[_numIndex]);
+                _bytes[1] = (byte)((tls & maskClearForRFL | tbs >> 3 & 0b00000100 | tbs >> 5 & 0b00000010 | tbs >> 7 & 0b00000001) + mud);
 
-                _bytes[2] = (byte)((tfs & maskClearForRFL | tls & 0b00000111) + _nums[_numIndex]);
+                _bytes[2] = (byte)((tfs & maskClearForRFL | tls & 0b00000111) + mud);
 
-                _bytes[3] = (byte)((trs & maskClearForRFL | tfs & 0b00000111) + _nums[_numIndex]);
+                _bytes[3] = (byte)((trs & maskClearForRFL | tfs & 0b00000111) + mud);
 
-                _bytes[4] = (byte)((tbs & maskClearForB | trs << 3 & 0b00100000 | trs << 5 & 0b01000000 | trs << 7 & 0b10000000) + _nums[_numIndex]);
+                _bytes[4] = (byte)((tbs & maskClearForB | trs << 3 & 0b00100000 | trs << 5 & 0b01000000 | trs << 7 & 0b10000000) + mud);
             }
             _numIndex += _offset;
             //---------------------
@@ -607,12 +621,13 @@
             var maskClearForRFL = 0b00011111;
             var maskClearForB = 0b11111000;
             byte trs, tls, tfs, tbs;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                trs = (byte)(_bytes[3] - _nums[_numIndex]);
-                tls = (byte)(_bytes[1] - _nums[_numIndex]);
-                tfs = (byte)(_bytes[2] - _nums[_numIndex]);
-                tbs = (byte)(_bytes[4] - _nums[_numIndex]);
+                trs = (byte)(_bytes[3] - mud);
+                tls = (byte)(_bytes[1] - mud);
+                tfs = (byte)(_bytes[2] - mud);
+                tbs = (byte)(_bytes[4] - mud);
                 _bytes[1] = (byte)(tls & maskClearForRFL | tfs & 0b11100000);
 
                 _bytes[4] = (byte)(tbs & maskClearForB | tls >> 3 & 0b00000100 | tls >> 5 & 0b00000010 | tls >> 7 & 0b00000001);
@@ -627,13 +642,13 @@
                 tls = _bytes[1];
                 tfs = _bytes[2];
                 tbs = _bytes[4];
-                _bytes[1] = (byte)((tls & maskClearForRFL | tfs & 0b11100000) + _nums[_numIndex]);
+                _bytes[1] = (byte)((tls & maskClearForRFL | tfs & 0b11100000) + mud);
 
-                _bytes[4] = (byte)((tbs & maskClearForB | tls >> 3 & 0b00000100 | tls >> 5 & 0b00000010 | tls >> 7 & 0b00000001) + _nums[_numIndex]);
+                _bytes[4] = (byte)((tbs & maskClearForB | tls >> 3 & 0b00000100 | tls >> 5 & 0b00000010 | tls >> 7 & 0b00000001) + mud);
 
-                _bytes[3] = (byte)((trs & maskClearForRFL | tbs << 3 & 0b00100000 | tbs << 5 & 0b01000000 | tbs << 7 & 0b10000000) + _nums[_numIndex]);
+                _bytes[3] = (byte)((trs & maskClearForRFL | tbs << 3 & 0b00100000 | tbs << 5 & 0b01000000 | tbs << 7 & 0b10000000) + mud);
 
-                _bytes[2] = (byte)((tfs & maskClearForRFL | trs & 0b11100000) + _nums[_numIndex]);
+                _bytes[2] = (byte)((tfs & maskClearForRFL | trs & 0b11100000) + mud);
             }
             _numIndex += _offset;
             //---------------------
@@ -645,12 +660,13 @@
             var maskClear = 0b10111101;
             var maskGet = 0b01000010;
             byte tus, tfs, tbs, tds;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                tus = (byte)(_bytes[0] - _nums[_numIndex]);
-                tfs = (byte)(_bytes[2] - _nums[_numIndex]);
-                tbs = (byte)(_bytes[4] - _nums[_numIndex]);
-                tds = (byte)(_bytes[5] - _nums[_numIndex]);
+                tus = (byte)(_bytes[0] - mud);
+                tfs = (byte)(_bytes[2] - mud);
+                tbs = (byte)(_bytes[4] - mud);
+                tds = (byte)(_bytes[5] - mud);
 
                 _bytes[0] = (byte)(tus & maskClear | tbs & maskGet);
 
@@ -667,13 +683,13 @@
                 tbs = _bytes[4];
                 tds = _bytes[5];
 
-                _bytes[0] = (byte)((tus & maskClear | tbs & maskGet) + _nums[_numIndex]);
+                _bytes[0] = (byte)((tus & maskClear | tbs & maskGet) + mud);
 
-                _bytes[4] = (byte)((tbs & maskClear | tds & maskGet) + _nums[_numIndex]);
+                _bytes[4] = (byte)((tbs & maskClear | tds & maskGet) + mud);
 
-                _bytes[5] = (byte)((tds & maskClear | tfs & maskGet) + _nums[_numIndex]);
+                _bytes[5] = (byte)((tds & maskClear | tfs & maskGet) + mud);
 
-                _bytes[2] = (byte)((tfs & maskClear | tus & maskGet) + _nums[_numIndex]);
+                _bytes[2] = (byte)((tfs & maskClear | tus & maskGet) + mud);
             }
             _numIndex += _offset;
         }
@@ -683,12 +699,13 @@
             var maskClear = 0b10111101;
             var maskGet = 0b01000010;
             byte tus, tfs, tbs, tds;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                tus = (byte)(_bytes[0] - _nums[_numIndex]);
-                tfs = (byte)(_bytes[2] - _nums[_numIndex]);
-                tbs = (byte)(_bytes[4] - _nums[_numIndex]);
-                tds = (byte)(_bytes[5] - _nums[_numIndex]);
+                tus = (byte)(_bytes[0] - mud);
+                tfs = (byte)(_bytes[2] - mud);
+                tbs = (byte)(_bytes[4] - mud);
+                tds = (byte)(_bytes[5] - mud);
 
                 _bytes[0] = (byte)(tus & maskClear | tfs & maskGet);
 
@@ -705,13 +722,13 @@
                 tbs = _bytes[4];
                 tds = _bytes[5];
 
-                _bytes[0] = (byte)((tus & maskClear | tfs & maskGet) + _nums[_numIndex]);
+                _bytes[0] = (byte)((tus & maskClear | tfs & maskGet) + mud);
 
-                _bytes[4] = (byte)((tbs & maskClear | tus & maskGet) + _nums[_numIndex]);
+                _bytes[4] = (byte)((tbs & maskClear | tus & maskGet) + mud);
 
-                _bytes[5] = (byte)((tds & maskClear | tbs & maskGet) + _nums[_numIndex]);
+                _bytes[5] = (byte)((tds & maskClear | tbs & maskGet) + mud);
 
-                _bytes[2] = (byte)((tfs & maskClear | tds & maskGet) + _nums[_numIndex]);
+                _bytes[2] = (byte)((tfs & maskClear | tds & maskGet) + mud);
             }
             _numIndex += _offset;
         }
@@ -721,12 +738,13 @@
             var maskClearUD = 0b11100111;
             var maskClearRL = 0b10111101;
             byte tus, tls, trs, tds;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                tus = (byte)(_bytes[0] - _nums[_numIndex]);
-                tls = (byte)(_bytes[1] - _nums[_numIndex]);
-                trs = (byte)(_bytes[3] - _nums[_numIndex]);
-                tds = (byte)(_bytes[5] - _nums[_numIndex]);
+                tus = (byte)(_bytes[0] - mud);
+                tls = (byte)(_bytes[1] - mud);
+                trs = (byte)(_bytes[3] - mud);
+                tds = (byte)(_bytes[5] - mud);
 
                 _bytes[0] = (byte)(tus & maskClearUD | tls << 3 & 0b00010000 | tls >> 3 & 0b00001000);
 
@@ -743,13 +761,13 @@
                 trs = _bytes[3];
                 tds = _bytes[5];
 
-                _bytes[0] = (byte)((tus & maskClearUD | tls << 3 & 0b00010000 | tls >> 3 & 0b00001000) + _nums[_numIndex]);
+                _bytes[0] = (byte)((tus & maskClearUD | tls << 3 & 0b00010000 | tls >> 3 & 0b00001000) + mud);
 
-                _bytes[3] = (byte)((trs & maskClearRL | tus << 2 & 0b01000000 | tus >> 2 & 0b00000010) + _nums[_numIndex]);
+                _bytes[3] = (byte)((trs & maskClearRL | tus << 2 & 0b01000000 | tus >> 2 & 0b00000010) + mud);
 
-                _bytes[5] = (byte)((tds & maskClearUD | trs >> 3 & 0b00001000 | trs << 3 & 0b00010000) + _nums[_numIndex]);
+                _bytes[5] = (byte)((tds & maskClearUD | trs >> 3 & 0b00001000 | trs << 3 & 0b00010000) + mud);
 
-                _bytes[1] = (byte)((tls & maskClearRL | tds >> 2 & 0b00000010 | tds << 2 & 0b01000000) + _nums[_numIndex]);
+                _bytes[1] = (byte)((tls & maskClearRL | tds >> 2 & 0b00000010 | tds << 2 & 0b01000000) + mud);
             }
             _numIndex += _offset;
         }
@@ -759,12 +777,13 @@
             var maskClearUD = 0b11100111;
             var maskClearRL = 0b10111101;
             byte tus, tls, trs, tds;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                tus = (byte)(_bytes[0] - _nums[_numIndex]);
-                tls = (byte)(_bytes[1] - _nums[_numIndex]);
-                trs = (byte)(_bytes[3] - _nums[_numIndex]);
-                tds = (byte)(_bytes[5] - _nums[_numIndex]);
+                tus = (byte)(_bytes[0] - mud);
+                tls = (byte)(_bytes[1] - mud);
+                trs = (byte)(_bytes[3] - mud);
+                tds = (byte)(_bytes[5] - mud);
                 _bytes[0] = (byte)(tus & maskClearUD | trs << 2 & 0b00001000 | trs >> 2 & 0b00010000);
 
                 _bytes[1] = (byte)(tls & maskClearRL | tus << 3 & 0b01000000 | tus >> 3 & 0b00000010);
@@ -779,13 +798,13 @@
                 tls = _bytes[1];
                 trs = _bytes[3];
                 tds = _bytes[5];
-                _bytes[0] = (byte)((tus & maskClearUD | trs << 2 & 0b00001000 | trs >> 2 & 0b00010000) + _nums[_numIndex]);
+                _bytes[0] = (byte)((tus & maskClearUD | trs << 2 & 0b00001000 | trs >> 2 & 0b00010000) + mud);
 
-                _bytes[1] = (byte)((tls & maskClearRL | tus << 3 & 0b01000000 | tus >> 3 & 0b00000010) + _nums[_numIndex]);
+                _bytes[1] = (byte)((tls & maskClearRL | tus << 3 & 0b01000000 | tus >> 3 & 0b00000010) + mud);
 
-                _bytes[5] = (byte)((tds & maskClearUD | tls >> 2 & 0b00010000 | tls << 2 & 0b00001000) + _nums[_numIndex]);
+                _bytes[5] = (byte)((tds & maskClearUD | tls >> 2 & 0b00010000 | tls << 2 & 0b00001000) + mud);
 
-                _bytes[3] = (byte)((trs & maskClearRL | tds >> 3 & 0b00000010 | tds << 3 & 0b01000000) + _nums[_numIndex]);
+                _bytes[3] = (byte)((trs & maskClearRL | tds >> 3 & 0b00000010 | tds << 3 & 0b01000000) + mud);
             }
             _numIndex += _offset;
         }
@@ -795,12 +814,13 @@
             var maskClear = 0b11100111;
             var maskGetRFL = 0b00011000;
             byte trs, tls, tfs, tbs;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                trs = (byte)(_bytes[3] - _nums[_numIndex]);
-                tls = (byte)(_bytes[1] - _nums[_numIndex]);
-                tfs = (byte)(_bytes[2] - _nums[_numIndex]);
-                tbs = (byte)(_bytes[4] - _nums[_numIndex]);
+                trs = (byte)(_bytes[3] - mud);
+                tls = (byte)(_bytes[1] - mud);
+                tfs = (byte)(_bytes[2] - mud);
+                tbs = (byte)(_bytes[4] - mud);
 
                 _bytes[2] = (byte)(tfs & maskClear | tls & maskGetRFL);
 
@@ -817,13 +837,13 @@
                 tfs = _bytes[2];
                 tbs = _bytes[4];
 
-                _bytes[2] = (byte)((tfs & maskClear | tls & maskGetRFL) + _nums[_numIndex]);
+                _bytes[2] = (byte)((tfs & maskClear | tls & maskGetRFL) + mud);
 
-                _bytes[3] = (byte)((trs & maskClear | tfs & maskGetRFL) + _nums[_numIndex]);
+                _bytes[3] = (byte)((trs & maskClear | tfs & maskGetRFL) + mud);
 
-                _bytes[4] = (byte)((tbs & maskClear | trs >> 1 & 0b00001000 | trs << 1 & 0b00010000) + _nums[_numIndex]);
+                _bytes[4] = (byte)((tbs & maskClear | trs >> 1 & 0b00001000 | trs << 1 & 0b00010000) + mud);
 
-                _bytes[1] = (byte)((tls & maskClear | tbs << 1 & 0b00010000 | tbs >> 1 & 0b00001000) + _nums[_numIndex]);
+                _bytes[1] = (byte)((tls & maskClear | tbs << 1 & 0b00010000 | tbs >> 1 & 0b00001000) + mud);
             }
             _numIndex += _offset;
         }
@@ -833,12 +853,13 @@
             var maskClear = 0b11100111;
             var maskGetRFL = 0b00011000;
             byte trs, tls, tfs, tbs;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                trs = (byte)(_bytes[3] - _nums[_numIndex]);
-                tls = (byte)(_bytes[1] - _nums[_numIndex]);
-                tfs = (byte)(_bytes[2] - _nums[_numIndex]);
-                tbs = (byte)(_bytes[4] - _nums[_numIndex]);
+                trs = (byte)(_bytes[3] - mud);
+                tls = (byte)(_bytes[1] - mud);
+                tfs = (byte)(_bytes[2] - mud);
+                tbs = (byte)(_bytes[4] - mud);
                 _bytes[2] = (byte)(tfs & maskClear | trs & maskGetRFL);
 
                 _bytes[1] = (byte)(tls & maskClear | tfs & maskGetRFL);
@@ -853,13 +874,13 @@
                 tls = _bytes[1];
                 tfs = _bytes[2];
                 tbs = _bytes[4];
-                _bytes[2] = (byte)((tfs & maskClear | trs & maskGetRFL) + _nums[_numIndex]);
+                _bytes[2] = (byte)((tfs & maskClear | trs & maskGetRFL) + mud);
 
-                _bytes[1] = (byte)((tls & maskClear | tfs & maskGetRFL) + _nums[_numIndex]);
+                _bytes[1] = (byte)((tls & maskClear | tfs & maskGetRFL) + mud);
 
-                _bytes[4] = (byte)((tbs & maskClear | tls << 1 & 0b00010000 | tls >> 1 & 0b00001000) + _nums[_numIndex]);
+                _bytes[4] = (byte)((tbs & maskClear | tls << 1 & 0b00010000 | tls >> 1 & 0b00001000) + mud);
 
-                _bytes[3] = (byte)((trs & maskClear | tbs >> 1 & 0b00001000 | tbs << 1 & 0b00010000) + _nums[_numIndex]);
+                _bytes[3] = (byte)((trs & maskClear | tbs >> 1 & 0b00001000 | tbs << 1 & 0b00010000) + mud);
             }
             _numIndex += _offset;
         }

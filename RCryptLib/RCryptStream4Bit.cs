@@ -23,8 +23,8 @@
 
         public override long Length => _read ? _stream.Length : throw new InvalidOperationException("Operation not possible in write mode.");
 
-        public override long Position 
-        { 
+        public override long Position
+        {
             get => _stream.Position;
             set => throw new NotImplementedException();
         }
@@ -51,7 +51,7 @@
             {
                 var lastPeace = new byte[24];
                 _cube.DoScramble(lastPeace);
-                _stream.Read(buffer, offset, 24); 
+                _stream.Read(buffer, offset, 24);
                 cubeBytes = new CubeBytes
                 {
                     U = new SideBytes { b1 = buffer[0], b2 = buffer[1], b3 = buffer[2], b4 = buffer[3] },
@@ -65,7 +65,7 @@
                 _cube.DoScramble(buffer);
                 if ((buffer[23] & 0b11100000) != 0)
                     return 0;
-                var read = 24;  
+                var read = 24;
                 var fake = buffer[23];
                 read = 24 - fake;
                 lastPeace.CopyTo(buffer, 0);
@@ -102,7 +102,7 @@
             {
                 for (int i = 0; i < 23; i++)
                     buffer[i] = 255;
-                buffer[23] = (byte)(24 - count); 
+                buffer[23] = (byte)(24 - count);
                 cubeBytes = new CubeBytes
                 {
                     U = new SideBytes { b1 = buffer[0], b2 = buffer[1], b3 = buffer[2], b4 = buffer[3] },
@@ -129,7 +129,12 @@
         private int _numIndex;
         private int _offset;
 
-        public Cube4Bit(bool decrypt) => _decryptMode = decrypt;
+        public Cube4Bit(bool decrypt)
+        {
+            _decryptMode = decrypt;
+            _numIndex = _decryptMode ? _nums.Count - 1 : 0;
+            _offset = _decryptMode ? -1 : 1;
+        }
 
         public void Init(ref CubeBytes bytes) => _bytes = bytes;
 
@@ -235,8 +240,6 @@
 
         public void DoScramble(byte[] bytes)
         {
-            _numIndex = _decryptMode ? _nums.Count - 1 : 0;
-            _offset = _decryptMode ? -1 : 1;
             var count = _moves.Count;
             for (int i = 0; i < count; ++i)
             {
@@ -279,23 +282,24 @@
             SideBytes tfs;
             SideBytes tbs;
             SideBytes tds;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                _bytes.U.b2 -= (byte)_nums[_numIndex];
-                _bytes.U.b3 -= (byte)_nums[_numIndex];
-                _bytes.U.b4 -= (byte)_nums[_numIndex];
+                _bytes.U.b2 -= mud;
+                _bytes.U.b3 -= mud;
+                _bytes.U.b4 -= mud;
 
-                _bytes.F.b2 -= (byte)_nums[_numIndex];
-                _bytes.F.b3 -= (byte)_nums[_numIndex];
-                _bytes.F.b4 -= (byte)_nums[_numIndex];
+                _bytes.F.b2 -= mud;
+                _bytes.F.b3 -= mud;
+                _bytes.F.b4 -= mud;
 
-                _bytes.B.b2 -= (byte)_nums[_numIndex];
-                _bytes.B.b3 -= (byte)_nums[_numIndex];
-                _bytes.B.b4 -= (byte)_nums[_numIndex];
+                _bytes.B.b2 -= mud;
+                _bytes.B.b3 -= mud;
+                _bytes.B.b4 -= mud;
 
-                _bytes.D.b2 -= (byte)_nums[_numIndex];
-                _bytes.D.b3 -= (byte)_nums[_numIndex];
-                _bytes.D.b4 -= (byte)_nums[_numIndex];
+                _bytes.D.b2 -= mud;
+                _bytes.D.b3 -= mud;
+                _bytes.D.b4 -= mud;
                 tus = _bytes.U;
                 tfs = _bytes.F;
                 tbs = _bytes.B;
@@ -341,9 +345,9 @@
                 _bytes.U.b2 |= (byte)(tfs.b2 & 0b00001111);
                 _bytes.U.b3 |= (byte)(tfs.b3 & 0b00001111);
                 _bytes.U.b4 |= (byte)(tfs.b4 & 0b11110000);
-                _bytes.U.b2 += (byte)_nums[_numIndex];
-                _bytes.U.b3 += (byte)_nums[_numIndex];
-                _bytes.U.b4 += (byte)_nums[_numIndex];
+                _bytes.U.b2 += mud;
+                _bytes.U.b3 += mud;
+                _bytes.U.b4 += mud;
 
                 _bytes.B.b2 &= 0b11110000;
                 _bytes.B.b3 &= 0b11110000;
@@ -351,9 +355,9 @@
                 _bytes.B.b2 |= (byte)(tus.b2 & 0b00001111);
                 _bytes.B.b3 |= (byte)(tus.b3 & 0b00001111);
                 _bytes.B.b4 |= (byte)(tus.b4 & 0b11110000);
-                _bytes.B.b2 += (byte)_nums[_numIndex];
-                _bytes.B.b3 += (byte)_nums[_numIndex];
-                _bytes.B.b4 += (byte)_nums[_numIndex];
+                _bytes.B.b2 += mud;
+                _bytes.B.b3 += mud;
+                _bytes.B.b4 += mud;
 
                 _bytes.D.b2 &= 0b11110000;
                 _bytes.D.b3 &= 0b11110000;
@@ -361,9 +365,9 @@
                 _bytes.D.b2 |= (byte)(tbs.b2 & 0b00001111);
                 _bytes.D.b3 |= (byte)(tbs.b3 & 0b00001111);
                 _bytes.D.b4 |= (byte)(tbs.b4 & 0b11110000);
-                _bytes.D.b2 += (byte)_nums[_numIndex];
-                _bytes.D.b3 += (byte)_nums[_numIndex];
-                _bytes.D.b4 += (byte)_nums[_numIndex];
+                _bytes.D.b2 += mud;
+                _bytes.D.b3 += mud;
+                _bytes.D.b4 += mud;
 
                 _bytes.F.b2 &= 0b11110000;
                 _bytes.F.b3 &= 0b11110000;
@@ -371,9 +375,9 @@
                 _bytes.F.b2 |= (byte)(tds.b2 & 0b00001111);
                 _bytes.F.b3 |= (byte)(tds.b3 & 0b00001111);
                 _bytes.F.b4 |= (byte)(tds.b4 & 0b11110000);
-                _bytes.F.b2 += (byte)_nums[_numIndex];
-                _bytes.F.b3 += (byte)_nums[_numIndex];
-                _bytes.F.b4 += (byte)_nums[_numIndex];
+                _bytes.F.b2 += mud;
+                _bytes.F.b3 += mud;
+                _bytes.F.b4 += mud;
             }
             _numIndex += _offset;
             //---------------------
@@ -386,23 +390,24 @@
             SideBytes tfs;
             SideBytes tbs;
             SideBytes tds;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                _bytes.U.b1 -= (byte)_nums[_numIndex];
-                _bytes.U.b2 -= (byte)_nums[_numIndex];
-                _bytes.U.b3 -= (byte)_nums[_numIndex];
+                _bytes.U.b1 -= mud;
+                _bytes.U.b2 -= mud;
+                _bytes.U.b3 -= mud;
 
-                _bytes.F.b1 -= (byte)_nums[_numIndex];
-                _bytes.F.b2 -= (byte)_nums[_numIndex];
-                _bytes.F.b3 -= (byte)_nums[_numIndex];
+                _bytes.F.b1 -= mud;
+                _bytes.F.b2 -= mud;
+                _bytes.F.b3 -= mud;
 
-                _bytes.B.b1 -= (byte)_nums[_numIndex];
-                _bytes.B.b2 -= (byte)_nums[_numIndex];
-                _bytes.B.b3 -= (byte)_nums[_numIndex];
+                _bytes.B.b1 -= mud;
+                _bytes.B.b2 -= mud;
+                _bytes.B.b3 -= mud;
 
-                _bytes.D.b1 -= (byte)_nums[_numIndex];
-                _bytes.D.b2 -= (byte)_nums[_numIndex];
-                _bytes.D.b3 -= (byte)_nums[_numIndex];
+                _bytes.D.b1 -= mud;
+                _bytes.D.b2 -= mud;
+                _bytes.D.b3 -= mud;
                 tus = _bytes.U;
                 tfs = _bytes.F;
                 tbs = _bytes.B;
@@ -448,9 +453,9 @@
                 _bytes.U.b1 |= (byte)(tbs.b1 & 0b00001111);
                 _bytes.U.b2 |= (byte)(tbs.b2 & 0b11110000);
                 _bytes.U.b3 |= (byte)(tbs.b3 & 0b11110000);
-                _bytes.U.b1 += (byte)_nums[_numIndex];
-                _bytes.U.b2 += (byte)_nums[_numIndex];
-                _bytes.U.b3 += (byte)_nums[_numIndex];
+                _bytes.U.b1 += mud;
+                _bytes.U.b2 += mud;
+                _bytes.U.b3 += mud;
 
                 _bytes.F.b1 &= 0b11110000;
                 _bytes.F.b2 &= 0b00001111;
@@ -458,9 +463,9 @@
                 _bytes.F.b1 |= (byte)(tus.b1 & 0b00001111);
                 _bytes.F.b2 |= (byte)(tus.b2 & 0b11110000);
                 _bytes.F.b3 |= (byte)(tus.b3 & 0b11110000);
-                _bytes.F.b1 += (byte)_nums[_numIndex];
-                _bytes.F.b2 += (byte)_nums[_numIndex];
-                _bytes.F.b3 += (byte)_nums[_numIndex];
+                _bytes.F.b1 += mud;
+                _bytes.F.b2 += mud;
+                _bytes.F.b3 += mud;
 
                 _bytes.D.b1 &= 0b11110000;
                 _bytes.D.b2 &= 0b00001111;
@@ -468,9 +473,9 @@
                 _bytes.D.b1 |= (byte)(tfs.b1 & 0b00001111);
                 _bytes.D.b2 |= (byte)(tfs.b2 & 0b11110000);
                 _bytes.D.b3 |= (byte)(tfs.b3 & 0b11110000);
-                _bytes.D.b1 += (byte)_nums[_numIndex];
-                _bytes.D.b2 += (byte)_nums[_numIndex];
-                _bytes.D.b3 += (byte)_nums[_numIndex];
+                _bytes.D.b1 += mud;
+                _bytes.D.b2 += mud;
+                _bytes.D.b3 += mud;
 
                 _bytes.B.b1 &= 0b11110000;
                 _bytes.B.b2 &= 0b00001111;
@@ -478,9 +483,9 @@
                 _bytes.B.b1 |= (byte)(tds.b1 & 0b00001111);
                 _bytes.B.b2 |= (byte)(tds.b2 & 0b11110000);
                 _bytes.B.b3 |= (byte)(tds.b3 & 0b11110000);
-                _bytes.B.b1 += (byte)_nums[_numIndex];
-                _bytes.B.b2 += (byte)_nums[_numIndex];
-                _bytes.B.b3 += (byte)_nums[_numIndex];
+                _bytes.B.b1 += mud;
+                _bytes.B.b2 += mud;
+                _bytes.B.b3 += mud;
             }
             _numIndex += _offset;
             //---------------------
@@ -493,21 +498,22 @@
             SideBytes trs;
             SideBytes tds;
             SideBytes tls;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                _bytes.U.b3 -= (byte)_nums[_numIndex];
-                _bytes.U.b4 -= (byte)_nums[_numIndex];
+                _bytes.U.b3 -= mud;
+                _bytes.U.b4 -= mud;
 
-                _bytes.R.b1 -= (byte)_nums[_numIndex];
-                _bytes.R.b2 -= (byte)_nums[_numIndex];
-                _bytes.R.b3 -= (byte)_nums[_numIndex];
+                _bytes.R.b1 -= mud;
+                _bytes.R.b2 -= mud;
+                _bytes.R.b3 -= mud;
 
-                _bytes.L.b2 -= (byte)_nums[_numIndex];
-                _bytes.L.b3 -= (byte)_nums[_numIndex];
-                _bytes.L.b4 -= (byte)_nums[_numIndex];
+                _bytes.L.b2 -= mud;
+                _bytes.L.b3 -= mud;
+                _bytes.L.b4 -= mud;
 
-                _bytes.D.b1 -= (byte)_nums[_numIndex];
-                _bytes.D.b2 -= (byte)_nums[_numIndex];
+                _bytes.D.b1 -= mud;
+                _bytes.D.b2 -= mud;
                 tus = _bytes.U;
                 trs = _bytes.R;
                 tds = _bytes.D;
@@ -551,17 +557,17 @@
                 _bytes.R.b1 |= (byte)(tus.b3 >> 4 & 0b00001111);
                 _bytes.R.b2 |= (byte)(tus.b4 << 4 & 0b11110000);
                 _bytes.R.b3 |= (byte)(tus.b4 & 0b11110000);
-                _bytes.R.b1 += (byte)_nums[_numIndex];
-                _bytes.R.b2 += (byte)_nums[_numIndex];
-                _bytes.R.b3 += (byte)_nums[_numIndex];
+                _bytes.R.b1 += mud;
+                _bytes.R.b2 += mud;
+                _bytes.R.b3 += mud;
 
                 _bytes.D.b2 &= 0b11110000;
                 _bytes.D.b1 &= 0b00000000;
                 _bytes.D.b2 |= (byte)(trs.b1 & 0b00001111);
                 _bytes.D.b1 |= (byte)(trs.b2 & 0b11110000);
                 _bytes.D.b1 |= (byte)(trs.b3 >> 4 & 0b00001111);
-                _bytes.D.b1 += (byte)_nums[_numIndex];
-                _bytes.D.b2 += (byte)_nums[_numIndex];
+                _bytes.D.b1 += mud;
+                _bytes.D.b2 += mud;
 
                 _bytes.L.b2 &= 0b11110000;
                 _bytes.L.b3 &= 0b11110000;
@@ -569,17 +575,17 @@
                 _bytes.L.b2 |= (byte)(tds.b1 & 0b00001111);
                 _bytes.L.b3 |= (byte)(tds.b1 >> 4 & 0b00001111);
                 _bytes.L.b4 |= (byte)(tds.b2 << 4 & 0b11110000);
-                _bytes.L.b4 += (byte)_nums[_numIndex];
-                _bytes.L.b2 += (byte)_nums[_numIndex];
-                _bytes.L.b3 += (byte)_nums[_numIndex];
+                _bytes.L.b4 += mud;
+                _bytes.L.b2 += mud;
+                _bytes.L.b3 += mud;
 
                 _bytes.U.b3 &= 0b00001111;
                 _bytes.U.b4 &= 0b00000000;
                 _bytes.U.b3 |= (byte)(tls.b4 & 0b11110000);
                 _bytes.U.b4 |= (byte)(tls.b3 & 0b00001111);
                 _bytes.U.b4 |= (byte)(tls.b2 << 4 & 0b11110000);
-                _bytes.U.b3 += (byte)_nums[_numIndex];
-                _bytes.U.b4 += (byte)_nums[_numIndex];
+                _bytes.U.b3 += mud;
+                _bytes.U.b4 += mud;
             }
             _numIndex += _offset;
             //---------------------
@@ -592,21 +598,22 @@
             SideBytes trs;
             SideBytes tds;
             SideBytes tls;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                _bytes.D.b3 -= (byte)_nums[_numIndex];
-                _bytes.D.b4 -= (byte)_nums[_numIndex];
+                _bytes.D.b3 -= mud;
+                _bytes.D.b4 -= mud;
 
-                _bytes.L.b1 -= (byte)_nums[_numIndex];
-                _bytes.L.b2 -= (byte)_nums[_numIndex];
-                _bytes.L.b3 -= (byte)_nums[_numIndex];
+                _bytes.L.b1 -= mud;
+                _bytes.L.b2 -= mud;
+                _bytes.L.b3 -= mud;
 
-                _bytes.R.b2 -= (byte)_nums[_numIndex];
-                _bytes.R.b3 -= (byte)_nums[_numIndex];
-                _bytes.R.b4 -= (byte)_nums[_numIndex];
+                _bytes.R.b2 -= mud;
+                _bytes.R.b3 -= mud;
+                _bytes.R.b4 -= mud;
 
-                _bytes.U.b1 -= (byte)_nums[_numIndex];
-                _bytes.U.b2 -= (byte)_nums[_numIndex];
+                _bytes.U.b1 -= mud;
+                _bytes.U.b2 -= mud;
                 tus = _bytes.U;
                 trs = _bytes.R;
                 tds = _bytes.D;
@@ -650,17 +657,17 @@
                 _bytes.L.b1 |= (byte)(tus.b2 & 0b00001111);
                 _bytes.L.b2 |= (byte)(tus.b1 & 0b11110000);
                 _bytes.L.b3 |= (byte)(tus.b1 << 4 & 0b11110000);
-                _bytes.L.b1 += (byte)_nums[_numIndex];
-                _bytes.L.b2 += (byte)_nums[_numIndex];
-                _bytes.L.b3 += (byte)_nums[_numIndex];
+                _bytes.L.b1 += mud;
+                _bytes.L.b2 += mud;
+                _bytes.L.b3 += mud;
 
                 _bytes.D.b3 &= 0b00001111;
                 _bytes.D.b4 &= 0b00000000;
                 _bytes.D.b3 |= (byte)(tls.b1 << 4 & 0b11110000);
                 _bytes.D.b4 |= (byte)(tls.b2 >> 4 & 0b00001111);
                 _bytes.D.b4 |= (byte)(tls.b3 & 0b11110000);
-                _bytes.D.b4 += (byte)_nums[_numIndex];
-                _bytes.D.b3 += (byte)_nums[_numIndex];
+                _bytes.D.b4 += mud;
+                _bytes.D.b3 += mud;
 
                 _bytes.R.b2 &= 0b11110000;
                 _bytes.R.b3 &= 0b11110000;
@@ -668,17 +675,17 @@
                 _bytes.R.b2 |= (byte)(tds.b4 >> 4 & 0b00001111);
                 _bytes.R.b3 |= (byte)(tds.b4 & 0b00001111);
                 _bytes.R.b4 |= (byte)(tds.b3 & 0b11110000);
-                _bytes.R.b4 += (byte)_nums[_numIndex];
-                _bytes.R.b2 += (byte)_nums[_numIndex];
-                _bytes.R.b3 += (byte)_nums[_numIndex];
+                _bytes.R.b4 += mud;
+                _bytes.R.b2 += mud;
+                _bytes.R.b3 += mud;
 
                 _bytes.U.b1 &= 0b00000000;
                 _bytes.U.b2 &= 0b11110000;
                 _bytes.U.b1 |= (byte)(trs.b2 & 0b00001111);
                 _bytes.U.b1 |= (byte)(trs.b3 << 4 & 0b11110000);
                 _bytes.U.b2 |= (byte)(trs.b4 >> 4 & 0b00001111);
-                _bytes.U.b1 += (byte)_nums[_numIndex];
-                _bytes.U.b2 += (byte)_nums[_numIndex];
+                _bytes.U.b1 += mud;
+                _bytes.U.b2 += mud;
             }
             _numIndex += _offset;
             //---------------------
@@ -691,19 +698,20 @@
             SideBytes tls;
             SideBytes tbs;
             SideBytes trs;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                _bytes.B.b3 -= (byte)_nums[_numIndex];
-                _bytes.B.b4 -= (byte)_nums[_numIndex];
+                _bytes.B.b3 -= mud;
+                _bytes.B.b4 -= mud;
 
-                _bytes.R.b1 -= (byte)_nums[_numIndex];
-                _bytes.R.b2 -= (byte)_nums[_numIndex];
+                _bytes.R.b1 -= mud;
+                _bytes.R.b2 -= mud;
 
-                _bytes.F.b1 -= (byte)_nums[_numIndex];
-                _bytes.F.b2 -= (byte)_nums[_numIndex];
+                _bytes.F.b1 -= mud;
+                _bytes.F.b2 -= mud;
 
-                _bytes.L.b1 -= (byte)_nums[_numIndex];
-                _bytes.L.b2 -= (byte)_nums[_numIndex];
+                _bytes.L.b1 -= mud;
+                _bytes.L.b2 -= mud;
                 tfs = _bytes.F;
                 tls = _bytes.L;
                 tbs = _bytes.B;
@@ -739,30 +747,30 @@
                 _bytes.L.b2 &= 0b11110000;
                 _bytes.L.b1 = (byte)(tfs.b1);
                 _bytes.L.b2 |= (byte)(tfs.b2 & 0b00001111);
-                _bytes.L.b1 += (byte)_nums[_numIndex];
-                _bytes.L.b2 += (byte)_nums[_numIndex];
+                _bytes.L.b1 += mud;
+                _bytes.L.b2 += mud;
 
                 _bytes.B.b3 &= 0b00001111;
                 _bytes.B.b4 &= 0b00000000;
                 _bytes.B.b3 |= (byte)(tls.b2 << 4 & 0b11110000);
                 _bytes.B.b4 |= (byte)(tls.b1 >> 4 & 0b00001111);
                 _bytes.B.b4 |= (byte)(tls.b1 << 4 & 0b11110000);
-                _bytes.B.b3 += (byte)_nums[_numIndex];
-                _bytes.B.b4 += (byte)_nums[_numIndex];
+                _bytes.B.b3 += mud;
+                _bytes.B.b4 += mud;
 
                 _bytes.R.b2 &= 0b11110000;
                 _bytes.R.b1 &= 0b00000000;
                 _bytes.R.b2 |= (byte)(tbs.b3 >> 4 & 0b00001111);
                 _bytes.R.b1 |= (byte)(tbs.b4 << 4 & 0b11110000);
                 _bytes.R.b1 |= (byte)(tbs.b4 >> 4 & 0b00001111);
-                _bytes.R.b1 += (byte)_nums[_numIndex];
-                _bytes.R.b2 += (byte)_nums[_numIndex];
+                _bytes.R.b1 += mud;
+                _bytes.R.b2 += mud;
 
                 _bytes.F.b2 &= 0b11110000;
                 _bytes.F.b1 = (byte)(trs.b1);
                 _bytes.F.b2 |= (byte)(trs.b2 & 0b00001111);
-                _bytes.F.b1 += (byte)_nums[_numIndex];
-                _bytes.F.b2 += (byte)_nums[_numIndex];
+                _bytes.F.b1 += mud;
+                _bytes.F.b2 += mud;
             }
             _numIndex += _offset;
             //---------------------
@@ -775,19 +783,20 @@
             SideBytes tls;
             SideBytes tbs;
             SideBytes trs;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                _bytes.B.b1 -= (byte)_nums[_numIndex];
-                _bytes.B.b2 -= (byte)_nums[_numIndex];
+                _bytes.B.b1 -= mud;
+                _bytes.B.b2 -= mud;
 
-                _bytes.R.b3 -= (byte)_nums[_numIndex];
-                _bytes.R.b4 -= (byte)_nums[_numIndex];
+                _bytes.R.b3 -= mud;
+                _bytes.R.b4 -= mud;
 
-                _bytes.F.b3 -= (byte)_nums[_numIndex];
-                _bytes.F.b4 -= (byte)_nums[_numIndex];
+                _bytes.F.b3 -= mud;
+                _bytes.F.b4 -= mud;
 
-                _bytes.L.b3 -= (byte)_nums[_numIndex];
-                _bytes.L.b4 -= (byte)_nums[_numIndex];
+                _bytes.L.b3 -= mud;
+                _bytes.L.b4 -= mud;
                 tfs = _bytes.F;
                 tls = _bytes.L;
                 tbs = _bytes.B;
@@ -824,28 +833,28 @@
                 _bytes.L.b3 |= (byte)(tbs.b2 << 4 & 0b11110000);
                 _bytes.L.b4 |= (byte)(tbs.b1 >> 4 & 0b00001111);
                 _bytes.L.b4 |= (byte)(tbs.b1 << 4 & 0b11110000);
-                _bytes.L.b3 += (byte)_nums[_numIndex];
-                _bytes.L.b4 += (byte)_nums[_numIndex];
+                _bytes.L.b3 += mud;
+                _bytes.L.b4 += mud;
 
                 _bytes.F.b3 &= 0b00001111;
                 _bytes.F.b4 = (byte)(tls.b4);
                 _bytes.F.b3 |= (byte)(tls.b3 & 0b11110000);
-                _bytes.F.b3 += (byte)_nums[_numIndex];
-                _bytes.F.b4 += (byte)_nums[_numIndex];
+                _bytes.F.b3 += mud;
+                _bytes.F.b4 += mud;
 
                 _bytes.R.b3 &= 0b00001111;
                 _bytes.R.b4 = (byte)(tfs.b4);
                 _bytes.R.b3 |= (byte)(tfs.b3 & 0b11110000);
-                _bytes.R.b3 += (byte)_nums[_numIndex];
-                _bytes.R.b4 += (byte)_nums[_numIndex];
+                _bytes.R.b3 += mud;
+                _bytes.R.b4 += mud;
 
                 _bytes.B.b2 &= 0b11110000;
                 _bytes.B.b1 &= 0b00000000;
                 _bytes.B.b2 |= (byte)(trs.b3 >> 4 & 0b00001111);
                 _bytes.B.b1 |= (byte)(trs.b4 << 4 & 0b11110000);
                 _bytes.B.b1 |= (byte)(trs.b4 >> 4 & 0b00001111);
-                _bytes.B.b1 += (byte)_nums[_numIndex];
-                _bytes.B.b2 += (byte)_nums[_numIndex];
+                _bytes.B.b1 += mud;
+                _bytes.B.b2 += mud;
             }
             _numIndex += _offset;
             //---------------------
@@ -858,23 +867,24 @@
             SideBytes tfs;
             SideBytes tbs;
             SideBytes tds;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                _bytes.U.b2 -= (byte)_nums[_numIndex];
-                _bytes.U.b3 -= (byte)_nums[_numIndex];
-                _bytes.U.b4 -= (byte)_nums[_numIndex];
+                _bytes.U.b2 -= mud;
+                _bytes.U.b3 -= mud;
+                _bytes.U.b4 -= mud;
 
-                _bytes.F.b2 -= (byte)_nums[_numIndex];
-                _bytes.F.b3 -= (byte)_nums[_numIndex];
-                _bytes.F.b4 -= (byte)_nums[_numIndex];
+                _bytes.F.b2 -= mud;
+                _bytes.F.b3 -= mud;
+                _bytes.F.b4 -= mud;
 
-                _bytes.B.b2 -= (byte)_nums[_numIndex];
-                _bytes.B.b3 -= (byte)_nums[_numIndex];
-                _bytes.B.b4 -= (byte)_nums[_numIndex];
+                _bytes.B.b2 -= mud;
+                _bytes.B.b3 -= mud;
+                _bytes.B.b4 -= mud;
 
-                _bytes.D.b2 -= (byte)_nums[_numIndex];
-                _bytes.D.b3 -= (byte)_nums[_numIndex];
-                _bytes.D.b4 -= (byte)_nums[_numIndex];
+                _bytes.D.b2 -= mud;
+                _bytes.D.b3 -= mud;
+                _bytes.D.b4 -= mud;
                 tus = _bytes.U;
                 tfs = _bytes.F;
                 tbs = _bytes.B;
@@ -942,21 +952,21 @@
                 _bytes.F.b3 |= (byte)(tus.b3 & 0b00001111);
                 _bytes.F.b4 |= (byte)(tus.b4 & 0b11110000);
 
-                _bytes.U.b2 += (byte)_nums[_numIndex];
-                _bytes.U.b3 += (byte)_nums[_numIndex];
-                _bytes.U.b4 += (byte)_nums[_numIndex];
+                _bytes.U.b2 += mud;
+                _bytes.U.b3 += mud;
+                _bytes.U.b4 += mud;
 
-                _bytes.B.b2 += (byte)_nums[_numIndex];
-                _bytes.B.b3 += (byte)_nums[_numIndex];
-                _bytes.B.b4 += (byte)_nums[_numIndex];
+                _bytes.B.b2 += mud;
+                _bytes.B.b3 += mud;
+                _bytes.B.b4 += mud;
 
-                _bytes.D.b2 += (byte)_nums[_numIndex];
-                _bytes.D.b3 += (byte)_nums[_numIndex];
-                _bytes.D.b4 += (byte)_nums[_numIndex];
+                _bytes.D.b2 += mud;
+                _bytes.D.b3 += mud;
+                _bytes.D.b4 += mud;
 
-                _bytes.F.b2 += (byte)_nums[_numIndex];
-                _bytes.F.b3 += (byte)_nums[_numIndex];
-                _bytes.F.b4 += (byte)_nums[_numIndex];
+                _bytes.F.b2 += mud;
+                _bytes.F.b3 += mud;
+                _bytes.F.b4 += mud;
             }
             _numIndex += _offset;
             //---------------------
@@ -969,23 +979,24 @@
             SideBytes tfs;
             SideBytes tbs;
             SideBytes tds;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                _bytes.U.b1 -= (byte)_nums[_numIndex];
-                _bytes.U.b2 -= (byte)_nums[_numIndex];
-                _bytes.U.b3 -= (byte)_nums[_numIndex];
+                _bytes.U.b1 -= mud;
+                _bytes.U.b2 -= mud;
+                _bytes.U.b3 -= mud;
 
-                _bytes.F.b1 -= (byte)_nums[_numIndex];
-                _bytes.F.b2 -= (byte)_nums[_numIndex];
-                _bytes.F.b3 -= (byte)_nums[_numIndex];
+                _bytes.F.b1 -= mud;
+                _bytes.F.b2 -= mud;
+                _bytes.F.b3 -= mud;
 
-                _bytes.B.b1 -= (byte)_nums[_numIndex];
-                _bytes.B.b2 -= (byte)_nums[_numIndex];
-                _bytes.B.b3 -= (byte)_nums[_numIndex];
+                _bytes.B.b1 -= mud;
+                _bytes.B.b2 -= mud;
+                _bytes.B.b3 -= mud;
 
-                _bytes.D.b1 -= (byte)_nums[_numIndex];
-                _bytes.D.b2 -= (byte)_nums[_numIndex];
-                _bytes.D.b3 -= (byte)_nums[_numIndex];
+                _bytes.D.b1 -= mud;
+                _bytes.D.b2 -= mud;
+                _bytes.D.b3 -= mud;
                 tus = _bytes.U;
                 tfs = _bytes.F;
                 tbs = _bytes.B;
@@ -1053,21 +1064,21 @@
                 _bytes.B.b2 |= (byte)(tus.b2 & 0b11110000);
                 _bytes.B.b3 |= (byte)(tus.b3 & 0b11110000);
 
-                _bytes.U.b1 += (byte)_nums[_numIndex];
-                _bytes.U.b2 += (byte)_nums[_numIndex];
-                _bytes.U.b3 += (byte)_nums[_numIndex];
+                _bytes.U.b1 += mud;
+                _bytes.U.b2 += mud;
+                _bytes.U.b3 += mud;
 
-                _bytes.F.b1 += (byte)_nums[_numIndex];
-                _bytes.F.b2 += (byte)_nums[_numIndex];
-                _bytes.F.b3 += (byte)_nums[_numIndex];
+                _bytes.F.b1 += mud;
+                _bytes.F.b2 += mud;
+                _bytes.F.b3 += mud;
 
-                _bytes.D.b1 += (byte)_nums[_numIndex];
-                _bytes.D.b2 += (byte)_nums[_numIndex];
-                _bytes.D.b3 += (byte)_nums[_numIndex];
+                _bytes.D.b1 += mud;
+                _bytes.D.b2 += mud;
+                _bytes.D.b3 += mud;
 
-                _bytes.B.b1 += (byte)_nums[_numIndex];
-                _bytes.B.b2 += (byte)_nums[_numIndex];
-                _bytes.B.b3 += (byte)_nums[_numIndex];
+                _bytes.B.b1 += mud;
+                _bytes.B.b2 += mud;
+                _bytes.B.b3 += mud;
             }
             _numIndex += _offset;
             //---------------------
@@ -1080,21 +1091,22 @@
             SideBytes trs;
             SideBytes tds;
             SideBytes tls;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                _bytes.U.b3 -= (byte)_nums[_numIndex];
-                _bytes.U.b4 -= (byte)_nums[_numIndex];
+                _bytes.U.b3 -= mud;
+                _bytes.U.b4 -= mud;
 
-                _bytes.R.b1 -= (byte)_nums[_numIndex];
-                _bytes.R.b2 -= (byte)_nums[_numIndex];
-                _bytes.R.b3 -= (byte)_nums[_numIndex];
+                _bytes.R.b1 -= mud;
+                _bytes.R.b2 -= mud;
+                _bytes.R.b3 -= mud;
 
-                _bytes.L.b2 -= (byte)_nums[_numIndex];
-                _bytes.L.b3 -= (byte)_nums[_numIndex];
-                _bytes.L.b4 -= (byte)_nums[_numIndex];
+                _bytes.L.b2 -= mud;
+                _bytes.L.b3 -= mud;
+                _bytes.L.b4 -= mud;
 
-                _bytes.D.b1 -= (byte)_nums[_numIndex];
-                _bytes.D.b2 -= (byte)_nums[_numIndex];
+                _bytes.D.b1 -= mud;
+                _bytes.D.b2 -= mud;
                 tus = _bytes.U;
                 trs = _bytes.R;
                 tds = _bytes.D;
@@ -1156,19 +1168,19 @@
                 _bytes.U.b3 |= (byte)(trs.b1 << 4 & 0b11110000);
                 _bytes.U.b4 |= (byte)(trs.b2 >> 4 & 0b00001111);
                 _bytes.U.b4 |= (byte)(trs.b3 & 0b11110000);
-                _bytes.R.b1 += (byte)_nums[_numIndex];
-                _bytes.R.b2 += (byte)_nums[_numIndex];
-                _bytes.R.b3 += (byte)_nums[_numIndex];
+                _bytes.R.b1 += mud;
+                _bytes.R.b2 += mud;
+                _bytes.R.b3 += mud;
 
-                _bytes.D.b1 += (byte)_nums[_numIndex];
-                _bytes.D.b2 += (byte)_nums[_numIndex];
+                _bytes.D.b1 += mud;
+                _bytes.D.b2 += mud;
 
-                _bytes.L.b4 += (byte)_nums[_numIndex];
-                _bytes.L.b2 += (byte)_nums[_numIndex];
-                _bytes.L.b3 += (byte)_nums[_numIndex];
+                _bytes.L.b4 += mud;
+                _bytes.L.b2 += mud;
+                _bytes.L.b3 += mud;
 
-                _bytes.U.b3 += (byte)_nums[_numIndex];
-                _bytes.U.b4 += (byte)_nums[_numIndex];
+                _bytes.U.b3 += mud;
+                _bytes.U.b4 += mud;
             }
             _numIndex += _offset;
             //---------------------
@@ -1181,21 +1193,22 @@
             SideBytes trs;
             SideBytes tds;
             SideBytes tls;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                _bytes.D.b3 -= (byte)_nums[_numIndex];
-                _bytes.D.b4 -= (byte)_nums[_numIndex];
+                _bytes.D.b3 -= mud;
+                _bytes.D.b4 -= mud;
 
-                _bytes.L.b1 -= (byte)_nums[_numIndex];
-                _bytes.L.b2 -= (byte)_nums[_numIndex];
-                _bytes.L.b3 -= (byte)_nums[_numIndex];
+                _bytes.L.b1 -= mud;
+                _bytes.L.b2 -= mud;
+                _bytes.L.b3 -= mud;
 
-                _bytes.R.b2 -= (byte)_nums[_numIndex];
-                _bytes.R.b3 -= (byte)_nums[_numIndex];
-                _bytes.R.b4 -= (byte)_nums[_numIndex];
+                _bytes.R.b2 -= mud;
+                _bytes.R.b3 -= mud;
+                _bytes.R.b4 -= mud;
 
-                _bytes.U.b1 -= (byte)_nums[_numIndex];
-                _bytes.U.b2 -= (byte)_nums[_numIndex];
+                _bytes.U.b1 -= mud;
+                _bytes.U.b2 -= mud;
                 tus = _bytes.U;
                 trs = _bytes.R;
                 tds = _bytes.D;
@@ -1257,19 +1270,19 @@
                 _bytes.U.b1 |= (byte)(tls.b3 >> 4 & 0b00001111);
                 _bytes.U.b1 |= (byte)(tls.b2 & 0b11110000);
                 _bytes.U.b2 |= (byte)(tls.b1 & 0b00001111);
-                _bytes.L.b1 += (byte)_nums[_numIndex];
-                _bytes.L.b2 += (byte)_nums[_numIndex];
-                _bytes.L.b3 += (byte)_nums[_numIndex];
+                _bytes.L.b1 += mud;
+                _bytes.L.b2 += mud;
+                _bytes.L.b3 += mud;
 
-                _bytes.D.b4 += (byte)_nums[_numIndex];
-                _bytes.D.b3 += (byte)_nums[_numIndex];
+                _bytes.D.b4 += mud;
+                _bytes.D.b3 += mud;
 
-                _bytes.R.b4 += (byte)_nums[_numIndex];
-                _bytes.R.b2 += (byte)_nums[_numIndex];
-                _bytes.R.b3 += (byte)_nums[_numIndex];
+                _bytes.R.b4 += mud;
+                _bytes.R.b2 += mud;
+                _bytes.R.b3 += mud;
 
-                _bytes.U.b1 += (byte)_nums[_numIndex];
-                _bytes.U.b2 += (byte)_nums[_numIndex];
+                _bytes.U.b1 += mud;
+                _bytes.U.b2 += mud;
             }
             _numIndex += _offset;
             //---------------------
@@ -1282,19 +1295,20 @@
             SideBytes tls;
             SideBytes tbs;
             SideBytes trs;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                _bytes.B.b3 -= (byte)_nums[_numIndex];
-                _bytes.B.b4 -= (byte)_nums[_numIndex];
+                _bytes.B.b3 -= mud;
+                _bytes.B.b4 -= mud;
 
-                _bytes.R.b1 -= (byte)_nums[_numIndex];
-                _bytes.R.b2 -= (byte)_nums[_numIndex];
+                _bytes.R.b1 -= mud;
+                _bytes.R.b2 -= mud;
 
-                _bytes.F.b1 -= (byte)_nums[_numIndex];
-                _bytes.F.b2 -= (byte)_nums[_numIndex];
+                _bytes.F.b1 -= mud;
+                _bytes.F.b2 -= mud;
 
-                _bytes.L.b1 -= (byte)_nums[_numIndex];
-                _bytes.L.b2 -= (byte)_nums[_numIndex];
+                _bytes.L.b1 -= mud;
+                _bytes.L.b2 -= mud;
                 tfs = _bytes.F;
                 tls = _bytes.L;
                 tbs = _bytes.B;
@@ -1344,17 +1358,17 @@
                 _bytes.F.b2 &= 0b11110000;
                 _bytes.F.b1 = (byte)(tls.b1);
                 _bytes.F.b2 |= (byte)(tls.b2 & 0b00001111);
-                _bytes.L.b1 += (byte)_nums[_numIndex];
-                _bytes.L.b2 += (byte)_nums[_numIndex];
+                _bytes.L.b1 += mud;
+                _bytes.L.b2 += mud;
 
-                _bytes.B.b3 += (byte)_nums[_numIndex];
-                _bytes.B.b4 += (byte)_nums[_numIndex];
+                _bytes.B.b3 += mud;
+                _bytes.B.b4 += mud;
 
-                _bytes.R.b1 += (byte)_nums[_numIndex];
-                _bytes.R.b2 += (byte)_nums[_numIndex];
+                _bytes.R.b1 += mud;
+                _bytes.R.b2 += mud;
 
-                _bytes.F.b1 += (byte)_nums[_numIndex];
-                _bytes.F.b2 += (byte)_nums[_numIndex];
+                _bytes.F.b1 += mud;
+                _bytes.F.b2 += mud;
             }
             _numIndex += _offset;
             //---------------------
@@ -1367,19 +1381,20 @@
             SideBytes tls;
             SideBytes tbs;
             SideBytes trs;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                _bytes.B.b1 -= (byte)_nums[_numIndex];
-                _bytes.B.b2 -= (byte)_nums[_numIndex];
+                _bytes.B.b1 -= mud;
+                _bytes.B.b2 -= mud;
 
-                _bytes.R.b3 -= (byte)_nums[_numIndex];
-                _bytes.R.b4 -= (byte)_nums[_numIndex];
+                _bytes.R.b3 -= mud;
+                _bytes.R.b4 -= mud;
 
-                _bytes.F.b3 -= (byte)_nums[_numIndex];
-                _bytes.F.b4 -= (byte)_nums[_numIndex];
+                _bytes.F.b3 -= mud;
+                _bytes.F.b4 -= mud;
 
-                _bytes.L.b3 -= (byte)_nums[_numIndex];
-                _bytes.L.b4 -= (byte)_nums[_numIndex];
+                _bytes.L.b3 -= mud;
+                _bytes.L.b4 -= mud;
                 tfs = _bytes.F;
                 tls = _bytes.L;
                 tbs = _bytes.B;
@@ -1429,17 +1444,17 @@
                 _bytes.B.b2 |= (byte)(tls.b3 >> 4 & 0b00001111);
                 _bytes.B.b1 |= (byte)(tls.b4 << 4 & 0b11110000);
                 _bytes.B.b1 |= (byte)(tls.b4 >> 4 & 0b00001111);
-                _bytes.L.b3 += (byte)_nums[_numIndex];
-                _bytes.L.b4 += (byte)_nums[_numIndex];
+                _bytes.L.b3 += mud;
+                _bytes.L.b4 += mud;
 
-                _bytes.F.b3 += (byte)_nums[_numIndex];
-                _bytes.F.b4 += (byte)_nums[_numIndex];
+                _bytes.F.b3 += mud;
+                _bytes.F.b4 += mud;
 
-                _bytes.R.b3 += (byte)_nums[_numIndex];
-                _bytes.R.b4 += (byte)_nums[_numIndex];
+                _bytes.R.b3 += mud;
+                _bytes.R.b4 += mud;
 
-                _bytes.B.b1 += (byte)_nums[_numIndex];
-                _bytes.B.b2 += (byte)_nums[_numIndex];
+                _bytes.B.b1 += mud;
+                _bytes.B.b2 += mud;
             }
             _numIndex += _offset;
             //---------------------
@@ -1452,19 +1467,20 @@
             SideBytes tfs;
             SideBytes tbs;
             SideBytes tds;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                _bytes.U.b1 -= (byte)_nums[_numIndex];
-                _bytes.U.b4 -= (byte)_nums[_numIndex];
+                _bytes.U.b1 -= mud;
+                _bytes.U.b4 -= mud;
 
-                _bytes.F.b1 -= (byte)_nums[_numIndex];
-                _bytes.F.b4 -= (byte)_nums[_numIndex];
+                _bytes.F.b1 -= mud;
+                _bytes.F.b4 -= mud;
 
-                _bytes.D.b1 -= (byte)_nums[_numIndex];
-                _bytes.D.b4 -= (byte)_nums[_numIndex];
+                _bytes.D.b1 -= mud;
+                _bytes.D.b4 -= mud;
 
-                _bytes.B.b1 -= (byte)_nums[_numIndex];
-                _bytes.B.b4 -= (byte)_nums[_numIndex];
+                _bytes.B.b1 -= mud;
+                _bytes.B.b4 -= mud;
                 tus = _bytes.U;
                 tfs = _bytes.F;
                 tbs = _bytes.B;
@@ -1500,29 +1516,29 @@
                 _bytes.U.b4 &= 0b11110000;
                 _bytes.U.b1 |= (byte)(tbs.b1 & 0b11110000);
                 _bytes.U.b4 |= (byte)(tbs.b4 & 0b00001111);
-                _bytes.U.b1 += (byte)_nums[_numIndex];
-                _bytes.U.b4 += (byte)_nums[_numIndex];
+                _bytes.U.b1 += mud;
+                _bytes.U.b4 += mud;
 
                 _bytes.F.b1 &= 0b00001111;
                 _bytes.F.b4 &= 0b11110000;
                 _bytes.F.b1 |= (byte)(tus.b1 & 0b11110000);
                 _bytes.F.b4 |= (byte)(tus.b4 & 0b00001111);
-                _bytes.F.b1 += (byte)_nums[_numIndex];
-                _bytes.F.b4 += (byte)_nums[_numIndex];
+                _bytes.F.b1 += mud;
+                _bytes.F.b4 += mud;
 
                 _bytes.D.b1 &= 0b00001111;
                 _bytes.D.b4 &= 0b11110000;
                 _bytes.D.b1 |= (byte)(tfs.b1 & 0b11110000);
                 _bytes.D.b4 |= (byte)(tfs.b4 & 0b00001111);
-                _bytes.D.b1 += (byte)_nums[_numIndex];
-                _bytes.D.b4 += (byte)_nums[_numIndex];
+                _bytes.D.b1 += mud;
+                _bytes.D.b4 += mud;
 
                 _bytes.B.b1 &= 0b00001111;
                 _bytes.B.b4 &= 0b11110000;
                 _bytes.B.b1 |= (byte)(tds.b1 & 0b11110000);
                 _bytes.B.b4 |= (byte)(tds.b4 & 0b00001111);
-                _bytes.B.b1 += (byte)_nums[_numIndex];
-                _bytes.B.b4 += (byte)_nums[_numIndex];
+                _bytes.B.b1 += mud;
+                _bytes.B.b4 += mud;
             }
             _numIndex += _offset;
         }
@@ -1533,19 +1549,20 @@
             SideBytes tfs;
             SideBytes tbs;
             SideBytes tds;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                _bytes.U.b1 -= (byte)_nums[_numIndex];
-                _bytes.U.b4 -= (byte)_nums[_numIndex];
+                _bytes.U.b1 -= mud;
+                _bytes.U.b4 -= mud;
 
-                _bytes.F.b1 -= (byte)_nums[_numIndex];
-                _bytes.F.b4 -= (byte)_nums[_numIndex];
+                _bytes.F.b1 -= mud;
+                _bytes.F.b4 -= mud;
 
-                _bytes.D.b1 -= (byte)_nums[_numIndex];
-                _bytes.D.b4 -= (byte)_nums[_numIndex];
+                _bytes.D.b1 -= mud;
+                _bytes.D.b4 -= mud;
 
-                _bytes.B.b1 -= (byte)_nums[_numIndex];
-                _bytes.B.b4 -= (byte)_nums[_numIndex];
+                _bytes.B.b1 -= mud;
+                _bytes.B.b4 -= mud;
                 tus = _bytes.U;
                 tfs = _bytes.F;
                 tbs = _bytes.B;
@@ -1595,17 +1612,17 @@
                 _bytes.B.b4 &= 0b11110000;
                 _bytes.B.b1 |= (byte)(tus.b1 & 0b11110000);
                 _bytes.B.b4 |= (byte)(tus.b4 & 0b00001111);
-                _bytes.U.b1 += (byte)_nums[_numIndex];
-                _bytes.U.b4 += (byte)_nums[_numIndex];
+                _bytes.U.b1 += mud;
+                _bytes.U.b4 += mud;
 
-                _bytes.F.b1 += (byte)_nums[_numIndex];
-                _bytes.F.b4 += (byte)_nums[_numIndex];
+                _bytes.F.b1 += mud;
+                _bytes.F.b4 += mud;
 
-                _bytes.D.b1 += (byte)_nums[_numIndex];
-                _bytes.D.b4 += (byte)_nums[_numIndex];
+                _bytes.D.b1 += mud;
+                _bytes.D.b4 += mud;
 
-                _bytes.B.b1 += (byte)_nums[_numIndex];
-                _bytes.B.b4 += (byte)_nums[_numIndex];
+                _bytes.B.b1 += mud;
+                _bytes.B.b4 += mud;
             }
             _numIndex += _offset;
         }
@@ -1616,19 +1633,20 @@
             SideBytes trs;
             SideBytes tls;
             SideBytes tds;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                _bytes.U.b2 -= (byte)_nums[_numIndex];
-                _bytes.U.b3 -= (byte)_nums[_numIndex];
+                _bytes.U.b2 -= mud;
+                _bytes.U.b3 -= mud;
 
-                _bytes.R.b1 -= (byte)_nums[_numIndex];
-                _bytes.R.b4 -= (byte)_nums[_numIndex];
+                _bytes.R.b1 -= mud;
+                _bytes.R.b4 -= mud;
 
-                _bytes.D.b2 -= (byte)_nums[_numIndex];
-                _bytes.D.b3 -= (byte)_nums[_numIndex];
+                _bytes.D.b2 -= mud;
+                _bytes.D.b3 -= mud;
 
-                _bytes.L.b1 -= (byte)_nums[_numIndex];
-                _bytes.L.b4 -= (byte)_nums[_numIndex];
+                _bytes.L.b1 -= mud;
+                _bytes.L.b4 -= mud;
                 tus = _bytes.U;
                 trs = _bytes.R;
                 tls = _bytes.L;
@@ -1665,29 +1683,29 @@
                 _bytes.U.b3 &= 0b11110000;
                 _bytes.U.b2 |= (byte)(tls.b4 << 4 & 0b11110000);
                 _bytes.U.b3 |= (byte)(tls.b1 >> 4 & 0b00001111);
-                _bytes.U.b2 += (byte)_nums[_numIndex];
-                _bytes.U.b3 += (byte)_nums[_numIndex];
+                _bytes.U.b2 += mud;
+                _bytes.U.b3 += mud;
 
                 _bytes.R.b1 &= 0b00001111;
                 _bytes.R.b4 &= 0b11110000;
                 _bytes.R.b1 |= (byte)(tus.b2 & 0b11110000);
                 _bytes.R.b4 |= (byte)(tus.b3 & 0b00001111);
-                _bytes.R.b1 += (byte)_nums[_numIndex];
-                _bytes.R.b4 += (byte)_nums[_numIndex];
+                _bytes.R.b1 += mud;
+                _bytes.R.b4 += mud;
 
                 _bytes.D.b2 &= 0b00001111;
                 _bytes.D.b3 &= 0b11110000;
                 _bytes.D.b2 |= (byte)(trs.b4 << 4 & 0b11110000);
                 _bytes.D.b3 |= (byte)(trs.b1 >> 4 & 0b00001111);
-                _bytes.D.b2 += (byte)_nums[_numIndex];
-                _bytes.D.b3 += (byte)_nums[_numIndex];
+                _bytes.D.b2 += mud;
+                _bytes.D.b3 += mud;
 
                 _bytes.L.b1 &= 0b00001111;
                 _bytes.L.b4 &= 0b11110000;
                 _bytes.L.b1 |= (byte)(tds.b2 & 0b11110000);
                 _bytes.L.b4 |= (byte)(tds.b3 & 0b00001111);
-                _bytes.L.b1 += (byte)_nums[_numIndex];
-                _bytes.L.b4 += (byte)_nums[_numIndex];
+                _bytes.L.b1 += mud;
+                _bytes.L.b4 += mud;
             }
             _numIndex += _offset;
         }
@@ -1698,19 +1716,20 @@
             SideBytes trs;
             SideBytes tls;
             SideBytes tds;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                _bytes.U.b2 -= (byte)_nums[_numIndex];
-                _bytes.U.b3 -= (byte)_nums[_numIndex];
+                _bytes.U.b2 -= mud;
+                _bytes.U.b3 -= mud;
 
-                _bytes.R.b1 -= (byte)_nums[_numIndex];
-                _bytes.R.b4 -= (byte)_nums[_numIndex];
+                _bytes.R.b1 -= mud;
+                _bytes.R.b4 -= mud;
 
-                _bytes.D.b2 -= (byte)_nums[_numIndex];
-                _bytes.D.b3 -= (byte)_nums[_numIndex];
+                _bytes.D.b2 -= mud;
+                _bytes.D.b3 -= mud;
 
-                _bytes.L.b1 -= (byte)_nums[_numIndex];
-                _bytes.L.b4 -= (byte)_nums[_numIndex];
+                _bytes.L.b1 -= mud;
+                _bytes.L.b4 -= mud;
                 tus = _bytes.U;
                 trs = _bytes.R;
                 tls = _bytes.L;
@@ -1760,17 +1779,17 @@
                 _bytes.L.b4 &= 0b11110000;
                 _bytes.L.b1 |= (byte)(tus.b3 << 4 & 0b11110000);
                 _bytes.L.b4 |= (byte)(tus.b2 >> 4 & 0b00001111);
-                _bytes.U.b2 += (byte)_nums[_numIndex];
-                _bytes.U.b3 += (byte)_nums[_numIndex];
+                _bytes.U.b2 += mud;
+                _bytes.U.b3 += mud;
 
-                _bytes.R.b1 += (byte)_nums[_numIndex];
-                _bytes.R.b4 += (byte)_nums[_numIndex];
+                _bytes.R.b1 += mud;
+                _bytes.R.b4 += mud;
 
-                _bytes.D.b2 += (byte)_nums[_numIndex];
-                _bytes.D.b3 += (byte)_nums[_numIndex];
+                _bytes.D.b2 += mud;
+                _bytes.D.b3 += mud;
 
-                _bytes.L.b1 += (byte)_nums[_numIndex];
-                _bytes.L.b4 += (byte)_nums[_numIndex];
+                _bytes.L.b1 += mud;
+                _bytes.L.b4 += mud;
             }
             _numIndex += _offset;
         }
@@ -1781,19 +1800,20 @@
             SideBytes trs;
             SideBytes tls;
             SideBytes tbs;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                _bytes.F.b2 -= (byte)_nums[_numIndex];
-                _bytes.F.b3 -= (byte)_nums[_numIndex];
+                _bytes.F.b2 -= mud;
+                _bytes.F.b3 -= mud;
 
-                _bytes.R.b2 -= (byte)_nums[_numIndex];
-                _bytes.R.b3 -= (byte)_nums[_numIndex];
+                _bytes.R.b2 -= mud;
+                _bytes.R.b3 -= mud;
 
-                _bytes.B.b2 -= (byte)_nums[_numIndex];
-                _bytes.B.b3 -= (byte)_nums[_numIndex];
+                _bytes.B.b2 -= mud;
+                _bytes.B.b3 -= mud;
 
-                _bytes.L.b2 -= (byte)_nums[_numIndex];
-                _bytes.L.b3 -= (byte)_nums[_numIndex];
+                _bytes.L.b2 -= mud;
+                _bytes.L.b3 -= mud;
                 tfs = _bytes.F;
                 trs = _bytes.R;
                 tls = _bytes.L;
@@ -1829,29 +1849,29 @@
                 _bytes.F.b3 &= 0b11110000;
                 _bytes.F.b2 |= (byte)(tls.b2 & 0b11110000);
                 _bytes.F.b3 |= (byte)(tls.b3 & 0b00001111);
-                _bytes.F.b2 += (byte)_nums[_numIndex];
-                _bytes.F.b3 += (byte)_nums[_numIndex];
+                _bytes.F.b2 += mud;
+                _bytes.F.b3 += mud;
 
                 _bytes.R.b2 &= 0b00001111;
                 _bytes.R.b3 &= 0b11110000;
                 _bytes.R.b2 |= (byte)(tfs.b2 & 0b11110000);
                 _bytes.R.b3 |= (byte)(tfs.b3 & 0b00001111);
-                _bytes.R.b2 += (byte)_nums[_numIndex];
-                _bytes.R.b3 += (byte)_nums[_numIndex];
+                _bytes.R.b2 += mud;
+                _bytes.R.b3 += mud;
 
                 _bytes.B.b2 &= 0b00001111;
                 _bytes.B.b3 &= 0b11110000;
                 _bytes.B.b2 |= (byte)(trs.b3 << 4 & 0b11110000);
                 _bytes.B.b3 |= (byte)(trs.b2 >> 4 & 0b00001111);
-                _bytes.B.b2 += (byte)_nums[_numIndex];
-                _bytes.B.b3 += (byte)_nums[_numIndex];
+                _bytes.B.b2 += mud;
+                _bytes.B.b3 += mud;
 
                 _bytes.L.b2 &= 0b00001111;
                 _bytes.L.b3 &= 0b11110000;
                 _bytes.L.b2 |= (byte)(tbs.b3 << 4 & 0b11110000);
                 _bytes.L.b3 |= (byte)(tbs.b2 >> 4 & 0b00001111);
-                _bytes.L.b2 += (byte)_nums[_numIndex];
-                _bytes.L.b3 += (byte)_nums[_numIndex];
+                _bytes.L.b2 += mud;
+                _bytes.L.b3 += mud;
             }
             _numIndex += _offset;
         }
@@ -1862,19 +1882,20 @@
             SideBytes trs;
             SideBytes tls;
             SideBytes tbs;
+            var mud = (byte)_nums[_numIndex];
             if (_decryptMode)
             {
-                _bytes.F.b2 -= (byte)_nums[_numIndex];
-                _bytes.F.b3 -= (byte)_nums[_numIndex];
+                _bytes.F.b2 -= mud;
+                _bytes.F.b3 -= mud;
 
-                _bytes.R.b2 -= (byte)_nums[_numIndex];
-                _bytes.R.b3 -= (byte)_nums[_numIndex];
+                _bytes.R.b2 -= mud;
+                _bytes.R.b3 -= mud;
 
-                _bytes.B.b2 -= (byte)_nums[_numIndex];
-                _bytes.B.b3 -= (byte)_nums[_numIndex];
+                _bytes.B.b2 -= mud;
+                _bytes.B.b3 -= mud;
 
-                _bytes.L.b2 -= (byte)_nums[_numIndex];
-                _bytes.L.b3 -= (byte)_nums[_numIndex];
+                _bytes.L.b2 -= mud;
+                _bytes.L.b3 -= mud;
                 tfs = _bytes.F;
                 trs = _bytes.R;
                 tls = _bytes.L;
@@ -1924,17 +1945,17 @@
                 _bytes.R.b3 &= 0b11110000;
                 _bytes.R.b2 |= (byte)(tbs.b3 << 4 & 0b11110000);
                 _bytes.R.b3 |= (byte)(tbs.b2 >> 4 & 0b00001111);
-                _bytes.F.b2 += (byte)_nums[_numIndex];
-                _bytes.F.b3 += (byte)_nums[_numIndex];
+                _bytes.F.b2 += mud;
+                _bytes.F.b3 += mud;
 
-                _bytes.R.b2 += (byte)_nums[_numIndex];
-                _bytes.R.b3 += (byte)_nums[_numIndex];
+                _bytes.R.b2 += mud;
+                _bytes.R.b3 += mud;
 
-                _bytes.B.b2 += (byte)_nums[_numIndex];
-                _bytes.B.b3 += (byte)_nums[_numIndex];
+                _bytes.B.b2 += mud;
+                _bytes.B.b3 += mud;
 
-                _bytes.L.b2 += (byte)_nums[_numIndex];
-                _bytes.L.b3 += (byte)_nums[_numIndex];
+                _bytes.L.b2 += mud;
+                _bytes.L.b3 += mud;
             }
             _numIndex += _offset;
         }
