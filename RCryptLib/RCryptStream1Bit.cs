@@ -90,12 +90,12 @@
         private Random? _rnd;
         private List<int> _nums = new List<int>();
         private int _numIndex;
+        private int _startNumIndex;
         private int _offset;
 
         public Cube1Bit(bool decrypt)
         {
             _decryptMode = decrypt;
-            _numIndex = _decryptMode ? _nums.Count - 1 : 0;
             _offset = _decryptMode ? -1 : 1;
         }
 
@@ -161,10 +161,12 @@
                     if (i + 1 < scramble.Length && scramble[i + 1] == '2')
                         _nums.Add(_rnd.Next(256));
                 }
+            _startNumIndex = _decryptMode ? _nums.Count - 1 : 0;
         }
 
         public byte[] DoScramble()
         {
+            _numIndex = _startNumIndex;
             var count = _moves.Count;
             for (int i = 0; i < count; ++i)
             {

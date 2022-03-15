@@ -76,7 +76,7 @@ namespace RCryptConsole
             Console.SetCursorPosition(0, Console.GetCursorPosition().Top);
             _out.Write(new string(' ', 10));
             Console.SetCursorPosition(0, Console.GetCursorPosition().Top);
-            _out.Write(String.Format("Progress: {0:P2}.", progress));
+            _out.Write(String.Format("Progress: {0:P2}.\t", progress));
         }
     }
 }

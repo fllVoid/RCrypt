@@ -20,12 +20,11 @@
             var cancelSource = new CancellationTokenSource();
             try
             {
-                using (var fileReadStream = File.OpenRead(sourcePath))
-                using (var fileWriteStream = File.OpenWrite(resultPath))
-                using (var readStream = new BufferedStream(fileReadStream, 1024))
+                using (var fileWriteStream = new BufferedStream(File.OpenWrite(resultPath), 1024 * 64))
+                using (var readStream = new BufferedStream(File.OpenRead(sourcePath), 1024 * 64))
                 using (var cryptStream = new RCryptStream1Bit(fileWriteStream, false, key))
                 {
-                    var progress = new Progress(fileReadStream);
+                    var progress = new Progress(readStream);
                     if (_printProgress != null)
                         printProgressTask = Task.Run(() => PrintProgress(cancelSource.Token, progress, _printProgress));
                     var buffer = new byte[6];
@@ -58,10 +57,9 @@
             var cancelSource = new CancellationTokenSource();
             try
             {
-                using (var fileReadStream = File.OpenRead(sourcePath))
-                using (var fileWriteStream = File.OpenWrite(resultPath))
+                using (var fileReadStream = new BufferedStream(File.OpenRead(sourcePath), 1024 * 64))
                 using (var readStream = new RCryptStream1Bit(fileReadStream, true, ReverseScramble(key)))
-                using (var writeStream = new BufferedStream(fileWriteStream, 1024))
+                using (var writeStream = new BufferedStream(File.OpenWrite(resultPath), 1024 * 64))
                 {
                     var progress = new Progress(fileReadStream);
                     if (_printProgress != null)
@@ -94,12 +92,11 @@
             var cancelSource = new CancellationTokenSource();
             try
             {
-                using (var fileReadStream = File.OpenRead(sourcePath))
-                using (var fileWriteStream = File.OpenWrite(resultPath))
-                using (var readStream = new BufferedStream(fileReadStream, 4096))
+                using (var fileWriteStream = new BufferedStream(File.OpenWrite(resultPath), 1024 * 64))
+                using (var readStream = new BufferedStream(File.OpenRead(sourcePath), 1024 * 64))
                 using (var cryptStream = new RCryptStream4Bit(fileWriteStream, false, key))
                 {
-                    var progress = new Progress(fileReadStream);
+                    var progress = new Progress(readStream);
                     if (_printProgress != null)
                         printProgressTask = Task.Run(() => PrintProgress(cancelSource.Token, progress, _printProgress));
                     var buffer = new byte[24];
@@ -132,10 +129,9 @@
             var cancelSource = new CancellationTokenSource();
             try
             {
-                using (var fileReadStream = File.OpenRead(sourcePath))
-                using (var fileWriteStream = File.OpenWrite(resultPath))
+                using (var fileReadStream = new BufferedStream(File.OpenRead(sourcePath), 1024 * 64))
                 using (var readStream = new RCryptStream4Bit(fileReadStream, true, ReverseScramble(key)))
-                using (var writeStream = new BufferedStream(fileWriteStream, 4096))
+                using (var writeStream = new BufferedStream(File.OpenWrite(resultPath), 1024 * 64))
                 {
                     var progress = new Progress(fileReadStream);
                     if (_printProgress != null)
@@ -217,7 +213,7 @@
 
             public Progress(Stream stream) => _stream = stream;
 
-            public double Get => (double)_stream.Position / _stream.Length;
+            public double Get => _stream.CanRead ? (double)_stream.Position / _stream.Length : 0;
         }
     }
 }
