@@ -15,6 +15,7 @@
 
         public bool EncryptFile1BitMode(string sourcePath, string resultPath, string key)
         {
+            var seed = key.GetHashCode();
             key = HandleKey(key);
             Task? printProgressTask = null;
             var cancelSource = new CancellationTokenSource();
@@ -24,7 +25,7 @@
                     File.Delete(resultPath);
                 using (var fileWriteStream = new BufferedStream(File.OpenWrite(resultPath), 1024 * 64))
                 using (var readStream = new BufferedStream(File.OpenRead(sourcePath), 1024 * 64))
-                using (var cryptStream = new RCryptStream1Bit(fileWriteStream, false, key))
+                using (var cryptStream = new RCryptStream1Bit(fileWriteStream, false, key, seed))
                 {
                     var progress = new Progress(readStream);
                     if (_printProgress != null)
@@ -54,6 +55,7 @@
 
         public bool DecryptFile1BitMode(string sourcePath, string resultPath, string key)
         {
+            var seed = key.GetHashCode();
             key = HandleKey(key);
             Task? printProgressTask = null;
             var cancelSource = new CancellationTokenSource();
@@ -62,7 +64,7 @@
                 if (File.Exists(resultPath))
                     File.Delete(resultPath);
                 using (var fileReadStream = new BufferedStream(File.OpenRead(sourcePath), 1024 * 64))
-                using (var readStream = new RCryptStream1Bit(fileReadStream, true, ReverseScramble(key)))
+                using (var readStream = new RCryptStream1Bit(fileReadStream, true, ReverseScramble(key), seed))
                 using (var writeStream = new BufferedStream(File.OpenWrite(resultPath), 1024 * 64))
                 {
                     var progress = new Progress(fileReadStream);
@@ -91,6 +93,7 @@
 
         public bool EncryptFile4BitMode(string sourcePath, string resultPath, string key)
         {
+            var seed = key.GetHashCode();
             key = HandleKey(key);
             Task? printProgressTask = null;
             var cancelSource = new CancellationTokenSource();
@@ -100,7 +103,7 @@
                     File.Delete(resultPath);
                 using (var fileWriteStream = new BufferedStream(File.OpenWrite(resultPath), 1024 * 64))
                 using (var readStream = new BufferedStream(File.OpenRead(sourcePath), 1024 * 64))
-                using (var cryptStream = new RCryptStream4Bit(fileWriteStream, false, key))
+                using (var cryptStream = new RCryptStream4Bit(fileWriteStream, false, key, seed))
                 {
                     var progress = new Progress(readStream);
                     if (_printProgress != null)
@@ -130,6 +133,7 @@
 
         public bool DecryptFile4BitMode(string sourcePath, string resultPath, string key)
         {
+            var seed = key.GetHashCode();
             if (File.Exists(resultPath))
                 File.Delete(resultPath);
             key = HandleKey(key);
@@ -140,7 +144,7 @@
                 if (File.Exists(resultPath))
                     File.Delete(resultPath);
                 using (var fileReadStream = new BufferedStream(File.OpenRead(sourcePath), 1024 * 64))
-                using (var readStream = new RCryptStream4Bit(fileReadStream, true, ReverseScramble(key)))
+                using (var readStream = new RCryptStream4Bit(fileReadStream, true, ReverseScramble(key), seed))
                 using (var writeStream = new BufferedStream(File.OpenWrite(resultPath), 1024 * 64))
                 {
                     var progress = new Progress(fileReadStream);
@@ -187,7 +191,7 @@
                     list.Add(result[i + 1]);
                     ++i;
                 }
-                else if (result[i] == '2' && i + 1 != result.Length)
+                else if (result[i] == '2' && i + 1 != result.Length && result[i + 1] != '2')
                 {
                     list.Add(result[i + 1]);
                     list.Add('2');

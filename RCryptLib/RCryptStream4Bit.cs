@@ -7,11 +7,11 @@
         private bool _read;
         public bool LastWrite { get; set; }
 
-        public RCryptStream4Bit(Stream baseStream, bool read, string scramble)
+        public RCryptStream4Bit(Stream baseStream, bool read, string scramble, int seed)
         {
             _stream = baseStream;
             _read = read;
-            _cube = new Cube4Bit(read);
+            _cube = new Cube4Bit(read, seed);
             _cube.SetScramble(scramble);
         }
 
@@ -124,16 +124,17 @@
         private byte[] _resultBytes = new byte[24];
         private List<Action> _moves = new List<Action>();
         private bool _decryptMode;
-        private Random? _rnd;
+        private Random _rnd;
         private List<int> _nums = new List<int>();
         private int _numIndex;
         private int _startNumIndex;
         private int _offset;
 
-        public Cube4Bit(bool decrypt)
+        public Cube4Bit(bool decrypt, int seed)
         {
             _decryptMode = decrypt;
             _offset = _decryptMode ? -1 : 1;
+            _rnd = new Random(seed);
         }
 
         public void Init(ref CubeBytes bytes) => _bytes = bytes;
@@ -142,7 +143,6 @@
         {
             _moves.Clear();
             int i = 0;
-            var sum = 0;
             Action<Action, Action> addMove = (Action move, Action antiMove) =>
             {
                 if (i + 1 == scramble.Length)
@@ -164,7 +164,6 @@
                         _moves.Add(move);
                         _moves.Add(move);
                     }
-                    sum += scramble[i];
                     ++i;
                 }
                 else
@@ -184,18 +183,11 @@
             {
                 if (dict.ContainsKey(scramble[i]))
                 {
-                    sum += scramble[i];
                     dict[scramble[i]]();
                 }
             }
-            _rnd = new Random(sum);
-            for (i = 0; i < scramble.Length; ++i)
-                if (dict.ContainsKey(scramble[i]))
-                {
-                    _nums.Add(_rnd.Next(256));
-                    if (i + 1 < scramble.Length && scramble[i + 1] == '2')
-                        _nums.Add(_rnd.Next(256));
-                }
+            for (i = 0; i < _moves.Count; ++i)
+                _nums.Add(_rnd.Next(256));
             _startNumIndex = _decryptMode ? _nums.Count - 1 : 0;
         }
 
