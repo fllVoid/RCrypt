@@ -5,10 +5,10 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 
-		<!--<GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
+		<GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
 		<PublishReadyToRun>true</PublishReadyToRun>
 		<PublishSingleFile>true</PublishSingleFile>
-		<PublishTrimmed>true</PublishTrimmed>-->
+		<PublishTrimmed>true</PublishTrimmed>
 	</PropertyGroup>
 
 	<ItemGroup>

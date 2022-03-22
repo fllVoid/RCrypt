@@ -196,12 +196,14 @@
         {
             _numIndex = _startNumIndex;
             var count = _moves.Count;
-            var tmpMud = _bytes.D.b4 ^ _bytes.U.b4 ^ _bytes.F.b4 ^ _bytes.B.b4 ^ _bytes.L.b4 ^ _bytes.R.b4;
+            //var tmpMud = _bytes.D.b4 ^ _bytes.U.b4 ^ _bytes.F.b4 ^ _bytes.B.b4 ^ _bytes.L.b4 ^ _bytes.R.b4;
+            var tmpMud = _decryptMode ? _rnd.Next(0, 256) : 0;
             for (int i = 0; i < count; ++i)
             {
                 _moves[i]();
             }
-            _lastMud = _decryptMode ? tmpMud : _bytes.D.b4 ^ _bytes.U.b4 ^ _bytes.F.b4 ^ _bytes.B.b4 ^ _bytes.L.b4 ^ _bytes.R.b4;
+            //_lastMud = _decryptMode ? tmpMud : _bytes.D.b4 ^ _bytes.U.b4 ^ _bytes.F.b4 ^ _bytes.B.b4 ^ _bytes.L.b4 ^ _bytes.R.b4;
+            _lastMud = _decryptMode ? tmpMud : _rnd.Next(0, 256);
             _resultBytes[0] = _bytes.U.b1;
             _resultBytes[1] = _bytes.U.b2;
             _resultBytes[2] = _bytes.U.b3;
@@ -238,12 +240,14 @@
         {
             _numIndex = _startNumIndex;
             var count = _moves.Count;
-            var tmpMud = _bytes.D.b4 ^ _bytes.U.b4 ^ _bytes.F.b4 ^ _bytes.B.b4 ^ _bytes.L.b4 ^ _bytes.R.b4;
+            //var tmpMud = _bytes.D.b4 ^ _bytes.U.b4 ^ _bytes.F.b4 ^ _bytes.B.b4 ^ _bytes.L.b4 ^ _bytes.R.b4;
+            var tmpMud = _decryptMode ? _rnd.Next(0, 256) : 0;
             for (int i = 0; i < count; ++i)
             {
                 _moves[i]();
             }
-            _lastMud = _decryptMode ? tmpMud : _bytes.D.b4 ^ _bytes.U.b4 ^ _bytes.F.b4 ^ _bytes.B.b4 ^ _bytes.L.b4 ^ _bytes.R.b4;
+            //_lastMud = _decryptMode ? tmpMud : _bytes.D.b4 ^ _bytes.U.b4 ^ _bytes.F.b4 ^ _bytes.B.b4 ^ _bytes.L.b4 ^ _bytes.R.b4;
+            _lastMud = _decryptMode ? tmpMud : _rnd.Next(0, 256);
             bytes[0] = _bytes.U.b1;
             bytes[1] = _bytes.U.b2;
             bytes[2] = _bytes.U.b3;

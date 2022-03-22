@@ -162,12 +162,14 @@
         {
             _numIndex = _startNumIndex;
             var count = _moves.Count;
-            var tmpMud = _bytes[5] ^ _bytes[0];
+            //var tmpMud = _decryptMode ? _bytes[5] + _bytes[0] + _bytes[1] + _bytes[2] + _bytes[3] + _bytes[4] : 0;
+            var tmpMud = _decryptMode ? _rnd.Next(0, 256) : 0;
             for (int i = 0; i < count; ++i)
             {
                 _moves[i]();
             }
-            _lastMud = _decryptMode ? tmpMud : _bytes[5] ^ _bytes[0];
+            //_lastMud = _decryptMode ? tmpMud : _bytes[5] + _bytes[0] + _bytes[1] + _bytes[2] + _bytes[3] + _bytes[4];
+            _lastMud = _decryptMode ? tmpMud : _rnd.Next(0, 256);
             return _bytes;
         }
 

@@ -23,8 +23,8 @@
             {
                 if (File.Exists(resultPath)) 
                     File.Delete(resultPath);
-                using (var fileWriteStream = new BufferedStream(File.OpenWrite(resultPath), 1024 * 64))
-                using (var readStream = new BufferedStream(File.OpenRead(sourcePath), 1024 * 64))
+                using (var fileWriteStream = new BufferedStream(File.OpenWrite(resultPath), 1024 * 4))
+                using (var readStream = new BufferedStream(File.OpenRead(sourcePath), 1024 * 4))
                 using (var cryptStream = new RCryptStream1Bit(fileWriteStream, false, key, seed))
                 {
                     var progress = new Progress(readStream);
@@ -63,9 +63,9 @@
             {
                 if (File.Exists(resultPath))
                     File.Delete(resultPath);
-                using (var fileReadStream = new BufferedStream(File.OpenRead(sourcePath), 1024 * 64))
+                using (var fileReadStream = new BufferedStream(File.OpenRead(sourcePath), 1024 * 4))
                 using (var readStream = new RCryptStream1Bit(fileReadStream, true, ReverseScramble(key), seed))
-                using (var writeStream = new BufferedStream(File.OpenWrite(resultPath), 1024 * 64))
+                using (var writeStream = new BufferedStream(File.OpenWrite(resultPath), 1024 * 4))
                 {
                     var progress = new Progress(fileReadStream);
                     if (_printProgress != null)
@@ -101,8 +101,8 @@
             {
                 if (File.Exists(resultPath))
                     File.Delete(resultPath);
-                using (var fileWriteStream = new BufferedStream(File.OpenWrite(resultPath), 1024 * 64))
-                using (var readStream = new BufferedStream(File.OpenRead(sourcePath), 1024 * 64))
+                using (var fileWriteStream = new BufferedStream(File.OpenWrite(resultPath), 1024 * 4))
+                using (var readStream = new BufferedStream(File.OpenRead(sourcePath), 1024 * 4))
                 using (var cryptStream = new RCryptStream4Bit(fileWriteStream, false, key, seed))
                 {
                     var progress = new Progress(readStream);
@@ -143,9 +143,9 @@
             {
                 if (File.Exists(resultPath))
                     File.Delete(resultPath);
-                using (var fileReadStream = new BufferedStream(File.OpenRead(sourcePath), 1024 * 64))
+                using (var fileReadStream = new BufferedStream(File.OpenRead(sourcePath), 1024 * 4))
                 using (var readStream = new RCryptStream4Bit(fileReadStream, true, ReverseScramble(key), seed))
-                using (var writeStream = new BufferedStream(File.OpenWrite(resultPath), 1024 * 64))
+                using (var writeStream = new BufferedStream(File.OpenWrite(resultPath), 1024 * 4))
                 {
                     var progress = new Progress(fileReadStream);
                     if (_printProgress != null)
