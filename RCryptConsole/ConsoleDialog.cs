@@ -11,10 +11,10 @@ namespace RCryptConsole
         const string failedMessage = "Failed to execute command";
         const string successMessage = "Done!";
         const string helpMessage =
-            "\t'enc1' command to encrypt file in 1-bit mode: enc <filepath (source)> <filepath (result)> <key>" +
-            "\n\t'enc4' command to encrypt file in 4-bit mode: enc <filepath (source)> <filepath (result)> <key>" +
-            "\n\t'dec1' command to decrypt file in 1-bit mode: dec <filepath (source)> <filepath (result)> <key>" +
-            "\n\t'dec4' command to decrypt file in 4-bit mode: dec <filepath (source)> <filepath (result)> <key>";
+            "\t'enc1' command to encrypt file in 1-bit mode: enc <filepath_(source)> <filepath_(result)> <key>" +
+            "\n\t'enc4' command to encrypt file in 4-bit mode: enc <filepath_(source)> <filepath_(result)> <key>" +
+            "\n\t'dec1' command to decrypt file in 1-bit mode: dec <filepath_(source)> <filepath_(result)> <key>" +
+            "\n\t'dec4' command to decrypt file in 4-bit mode: dec <filepath_(source)> <filepath_(result)> <key>";
 
         public ConsoleDialog()
         {

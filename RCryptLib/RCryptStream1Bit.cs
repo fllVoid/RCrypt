@@ -92,6 +92,7 @@
         private int _numIndex;
         private int _startNumIndex;
         private int _offset;
+        private int _lastMud = 113;
 
         public Cube1Bit(bool decrypt, int seed)
         {
@@ -161,10 +162,12 @@
         {
             _numIndex = _startNumIndex;
             var count = _moves.Count;
+            var tmpMud = _bytes[5] ^ _bytes[0];
             for (int i = 0; i < count; ++i)
             {
                 _moves[i]();
             }
+            _lastMud = _decryptMode ? tmpMud : _bytes[5] ^ _bytes[0];
             return _bytes;
         }
 
@@ -173,7 +176,7 @@
             var maskGet = 0b10010100;
             var maskClear = 0b01101011;
             byte tus, tfs, tbs, tds;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)_nums[_numIndex] + _lastMud;
             if (_decryptMode)
             {
                 tus = (byte)(_bytes[0] - mud);
@@ -214,7 +217,7 @@
             var maskGet = 0b00101001;
             var maskClear = 0b11010110;//check
             byte tus, tfs, tbs, tds;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)_nums[_numIndex] + _lastMud;
             if (_decryptMode)
             {
                 tus = (byte)(_bytes[0] - mud);
@@ -255,7 +258,7 @@
             var maskClearForL = 0b01101011;
             var maskClearForU = 0b00011111;
             byte tus, tls, trs, tds;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)_nums[_numIndex] + _lastMud;
             if (_decryptMode)
             {
                 tus = (byte)(_bytes[0] - mud);
@@ -296,7 +299,7 @@
             var maskClearForL = 0b11010110;
             var maskClearForU = 0b11111000;
             byte tus, tls, trs, tds;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)_nums[_numIndex] + _lastMud;
             if (_decryptMode)
             {
                 tus = (byte)(_bytes[0] - mud);
@@ -335,7 +338,7 @@
             var maskClearForRFL = 0b11111000;
             var maskClearForB = 0b00011111;
             byte trs, tls, tfs, tbs;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)_nums[_numIndex] + _lastMud;
             if (_decryptMode)
             {
                 trs = (byte)(_bytes[3] - mud);
@@ -374,7 +377,7 @@
             var maskClearForRFL = 0b00011111;
             var maskClearForB = 0b11111000;
             byte trs, tls, tfs, tbs;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)_nums[_numIndex] + _lastMud;
             if (_decryptMode)
             {
                 trs = (byte)(_bytes[3] - mud);
@@ -413,7 +416,7 @@
             var maskGet = 0b10010100;
             var maskClear = 0b01101011;
             byte tus, tfs, tbs, tds;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)_nums[_numIndex] + _lastMud;
             if (_decryptMode)
             {
                 tus = (byte)(_bytes[0] - mud);
@@ -454,7 +457,7 @@
             var maskGet = 0b00101001;
             var maskClear = 0b11010110;//check
             byte tus, tfs, tbs, tds;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)_nums[_numIndex] + _lastMud;
             if (_decryptMode)
             {
                 tus = (byte)(_bytes[0] - mud);
@@ -495,7 +498,7 @@
             var maskClearForL = 0b01101011;
             var maskClearForU = 0b00011111;
             byte tus, tls, trs, tds;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)_nums[_numIndex] + _lastMud;
             if (_decryptMode)
             {
                 tus = (byte)(_bytes[0] - mud);
@@ -538,7 +541,7 @@
             var maskClearForL = 0b11010110;
             var maskClearForU = 0b11111000;
             byte tus, tls, trs, tds;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)_nums[_numIndex] + _lastMud;
             if (_decryptMode)
             {
                 tus = (byte)(_bytes[0] - mud);
@@ -577,7 +580,7 @@
             var maskClearForRFL = 0b11111000;
             var maskClearForB = 0b00011111;
             byte trs, tls, tfs, tbs;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)_nums[_numIndex] + _lastMud;
             if (_decryptMode)
             {
                 trs = (byte)(_bytes[3] - mud);
@@ -616,7 +619,7 @@
             var maskClearForRFL = 0b00011111;
             var maskClearForB = 0b11111000;
             byte trs, tls, tfs, tbs;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)_nums[_numIndex] + _lastMud;
             if (_decryptMode)
             {
                 trs = (byte)(_bytes[3] - mud);
@@ -655,7 +658,7 @@
             var maskClear = 0b10111101;
             var maskGet = 0b01000010;
             byte tus, tfs, tbs, tds;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)_nums[_numIndex] + _lastMud;
             if (_decryptMode)
             {
                 tus = (byte)(_bytes[0] - mud);
@@ -694,7 +697,7 @@
             var maskClear = 0b10111101;
             var maskGet = 0b01000010;
             byte tus, tfs, tbs, tds;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)_nums[_numIndex] + _lastMud;
             if (_decryptMode)
             {
                 tus = (byte)(_bytes[0] - mud);
@@ -733,7 +736,7 @@
             var maskClearUD = 0b11100111;
             var maskClearRL = 0b10111101;
             byte tus, tls, trs, tds;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)_nums[_numIndex] + _lastMud;
             if (_decryptMode)
             {
                 tus = (byte)(_bytes[0] - mud);
@@ -772,7 +775,7 @@
             var maskClearUD = 0b11100111;
             var maskClearRL = 0b10111101;
             byte tus, tls, trs, tds;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)_nums[_numIndex] + _lastMud;
             if (_decryptMode)
             {
                 tus = (byte)(_bytes[0] - mud);
@@ -809,7 +812,7 @@
             var maskClear = 0b11100111;
             var maskGetRFL = 0b00011000;
             byte trs, tls, tfs, tbs;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)_nums[_numIndex] + _lastMud;
             if (_decryptMode)
             {
                 trs = (byte)(_bytes[3] - mud);
@@ -848,7 +851,7 @@
             var maskClear = 0b11100111;
             var maskGetRFL = 0b00011000;
             byte trs, tls, tfs, tbs;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)_nums[_numIndex] + _lastMud;
             if (_decryptMode)
             {
                 trs = (byte)(_bytes[3] - mud);

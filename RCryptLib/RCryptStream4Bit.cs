@@ -129,6 +129,7 @@
         private int _numIndex;
         private int _startNumIndex;
         private int _offset;
+        private int _lastMud = 113;
 
         public Cube4Bit(bool decrypt, int seed)
         {
@@ -195,10 +196,12 @@
         {
             _numIndex = _startNumIndex;
             var count = _moves.Count;
+            var tmpMud = _bytes.D.b4 ^ _bytes.U.b4 ^ _bytes.F.b4 ^ _bytes.B.b4 ^ _bytes.L.b4 ^ _bytes.R.b4;
             for (int i = 0; i < count; ++i)
             {
                 _moves[i]();
             }
+            _lastMud = _decryptMode ? tmpMud : _bytes.D.b4 ^ _bytes.U.b4 ^ _bytes.F.b4 ^ _bytes.B.b4 ^ _bytes.L.b4 ^ _bytes.R.b4;
             _resultBytes[0] = _bytes.U.b1;
             _resultBytes[1] = _bytes.U.b2;
             _resultBytes[2] = _bytes.U.b3;
@@ -235,10 +238,12 @@
         {
             _numIndex = _startNumIndex;
             var count = _moves.Count;
+            var tmpMud = _bytes.D.b4 ^ _bytes.U.b4 ^ _bytes.F.b4 ^ _bytes.B.b4 ^ _bytes.L.b4 ^ _bytes.R.b4;
             for (int i = 0; i < count; ++i)
             {
                 _moves[i]();
             }
+            _lastMud = _decryptMode ? tmpMud : _bytes.D.b4 ^ _bytes.U.b4 ^ _bytes.F.b4 ^ _bytes.B.b4 ^ _bytes.L.b4 ^ _bytes.R.b4;
             bytes[0] = _bytes.U.b1;
             bytes[1] = _bytes.U.b2;
             bytes[2] = _bytes.U.b3;
@@ -276,7 +281,7 @@
             SideBytes tfs;
             SideBytes tbs;
             SideBytes tds;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)(_nums[_numIndex] + _lastMud);
             if (_decryptMode)
             {
                 _bytes.U.b2 -= mud;
@@ -384,7 +389,7 @@
             SideBytes tfs;
             SideBytes tbs;
             SideBytes tds;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)(_nums[_numIndex] + _lastMud);
             if (_decryptMode)
             {
                 _bytes.U.b1 -= mud;
@@ -492,7 +497,7 @@
             SideBytes trs;
             SideBytes tds;
             SideBytes tls;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)(_nums[_numIndex] + _lastMud);
             if (_decryptMode)
             {
                 _bytes.U.b3 -= mud;
@@ -592,7 +597,7 @@
             SideBytes trs;
             SideBytes tds;
             SideBytes tls;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)(_nums[_numIndex] + _lastMud);
             if (_decryptMode)
             {
                 _bytes.D.b3 -= mud;
@@ -692,7 +697,7 @@
             SideBytes tls;
             SideBytes tbs;
             SideBytes trs;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)(_nums[_numIndex] + _lastMud);
             if (_decryptMode)
             {
                 _bytes.B.b3 -= mud;
@@ -777,7 +782,7 @@
             SideBytes tls;
             SideBytes tbs;
             SideBytes trs;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)(_nums[_numIndex] + _lastMud);
             if (_decryptMode)
             {
                 _bytes.B.b1 -= mud;
@@ -861,7 +866,7 @@
             SideBytes tfs;
             SideBytes tbs;
             SideBytes tds;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)(_nums[_numIndex] + _lastMud);
             if (_decryptMode)
             {
                 _bytes.U.b2 -= mud;
@@ -973,7 +978,7 @@
             SideBytes tfs;
             SideBytes tbs;
             SideBytes tds;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)(_nums[_numIndex] + _lastMud);
             if (_decryptMode)
             {
                 _bytes.U.b1 -= mud;
@@ -1085,7 +1090,7 @@
             SideBytes trs;
             SideBytes tds;
             SideBytes tls;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)(_nums[_numIndex] + _lastMud);
             if (_decryptMode)
             {
                 _bytes.U.b3 -= mud;
@@ -1187,7 +1192,7 @@
             SideBytes trs;
             SideBytes tds;
             SideBytes tls;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)(_nums[_numIndex] + _lastMud);
             if (_decryptMode)
             {
                 _bytes.D.b3 -= mud;
@@ -1289,7 +1294,7 @@
             SideBytes tls;
             SideBytes tbs;
             SideBytes trs;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)(_nums[_numIndex] + _lastMud);
             if (_decryptMode)
             {
                 _bytes.B.b3 -= mud;
@@ -1375,7 +1380,7 @@
             SideBytes tls;
             SideBytes tbs;
             SideBytes trs;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)(_nums[_numIndex] + _lastMud);
             if (_decryptMode)
             {
                 _bytes.B.b1 -= mud;
@@ -1461,7 +1466,7 @@
             SideBytes tfs;
             SideBytes tbs;
             SideBytes tds;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)(_nums[_numIndex] + _lastMud);
             if (_decryptMode)
             {
                 _bytes.U.b1 -= mud;
@@ -1543,7 +1548,7 @@
             SideBytes tfs;
             SideBytes tbs;
             SideBytes tds;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)(_nums[_numIndex] + _lastMud);
             if (_decryptMode)
             {
                 _bytes.U.b1 -= mud;
@@ -1627,7 +1632,7 @@
             SideBytes trs;
             SideBytes tls;
             SideBytes tds;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)(_nums[_numIndex] + _lastMud);
             if (_decryptMode)
             {
                 _bytes.U.b2 -= mud;
@@ -1710,7 +1715,7 @@
             SideBytes trs;
             SideBytes tls;
             SideBytes tds;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)(_nums[_numIndex] + _lastMud);
             if (_decryptMode)
             {
                 _bytes.U.b2 -= mud;
@@ -1794,7 +1799,7 @@
             SideBytes trs;
             SideBytes tls;
             SideBytes tbs;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)(_nums[_numIndex] + _lastMud);
             if (_decryptMode)
             {
                 _bytes.F.b2 -= mud;
@@ -1876,7 +1881,7 @@
             SideBytes trs;
             SideBytes tls;
             SideBytes tbs;
-            var mud = (byte)_nums[_numIndex];
+            var mud = (byte)(_nums[_numIndex] + _lastMud);
             if (_decryptMode)
             {
                 _bytes.F.b2 -= mud;
