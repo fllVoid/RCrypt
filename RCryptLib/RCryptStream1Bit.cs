@@ -1,18 +1,18 @@
 ﻿namespace RCryptLib
 {
-    internal class RCryptStream1Bit : Stream
+    internal class RCryptStream1Bit : RCryptStream
     {
         private Stream _stream;
         private bool _read;
         private Cube1Bit _cube;
-        public bool LastWrite { get; set; }
+        public override bool LastWrite { get; set; }
+        public override int BlockSizeInBytes => 6;
 
         public RCryptStream1Bit(Stream baseStream, bool read, string scramble, int seed)
         {
             _stream = baseStream;
             _read = read;
-            _cube = new Cube1Bit(read, seed);
-            _cube.SetScramble(scramble);
+            _cube = new Cube1Bit(read, seed, scramble);
         }
 
         public override bool CanRead => _read;
@@ -49,7 +49,7 @@
                     return 0;
                 var read = 6;
                 var fake = buffer[5];
-                read = 6 - fake;
+                read = 6 - fake % 7;
                 lastPeace.CopyTo(buffer, 0);
                 return read;
             }
@@ -84,21 +84,25 @@
 
     internal class Cube1Bit
     {
-        private byte[] _bytes = new byte[6];
+        private const int _blockSize = 6;
+        private byte[] _bytes = new byte[_blockSize];
+        private byte[] _tmpBytes = new byte[_blockSize];
         private List<Action> _moves = new List<Action>();
         private bool _decryptMode;
         private Random _rnd;
-        private List<int> _nums = new List<int>();
+        private byte[] _nums = Array.Empty<byte>();
         private int _numIndex;
         private int _startNumIndex;
         private int _offset;
-        private int _lastMud = 113;
+        private string _scramble;
 
-        public Cube1Bit(bool decrypt, int seed)
+        public Cube1Bit(bool decrypt, int seed, string scramble)
         {
             _decryptMode = decrypt;
             _offset = _decryptMode ? -1 : 1;
             _rnd = new Random(seed);
+            _scramble = scramble;
+            InitFirstVector();
         }
 
         public void Init(byte b1, byte b2, byte b3, byte b4, byte b5, byte b6)
@@ -106,7 +110,7 @@
             _bytes = new[] { b1, b2, b3, b4, b5, b6 };
         }
 
-        public void SetScramble(string scramble)
+        private void SetScramble(string scramble)
         {
             _moves.Clear();
             int i = 0;
@@ -153,24 +157,52 @@
                     dict[scramble[i]]();
                 }
             }
-            for (i = 0; i < _moves.Count; ++i)
-                    _nums.Add(_rnd.Next(256));
-            _startNumIndex = _decryptMode ? _nums.Count - 1 : 0;
         }
 
         public byte[] DoScramble()
         {
             _numIndex = _startNumIndex;
             var count = _moves.Count;
-            //var tmpMud = _decryptMode ? _bytes[5] + _bytes[0] + _bytes[1] + _bytes[2] + _bytes[3] + _bytes[4] : 0;
-            var tmpMud = _decryptMode ? _rnd.Next(0, 256) : 0;
+            if (_decryptMode)
+                SaveBytes(_tmpBytes);
             for (int i = 0; i < count; ++i)
             {
                 _moves[i]();
             }
-            //_lastMud = _decryptMode ? tmpMud : _bytes[5] + _bytes[0] + _bytes[1] + _bytes[2] + _bytes[3] + _bytes[4];
-            _lastMud = _decryptMode ? tmpMud : _rnd.Next(0, 256);
+            var tmpArr = _decryptMode ? _tmpBytes : _bytes;
+            for (int i = 0; i < _moves.Count; ++i)
+                _nums[i] = tmpArr[i % _blockSize];
             return _bytes;
+        }
+
+        private void InitFirstVector()
+        {
+            var tmpMode = _decryptMode;
+            var tmpScramble = _scramble;
+            if (_decryptMode)
+                _scramble = ScrambleHelper.ReverseScramble(_scramble);
+            SetScramble(_scramble);
+            _nums = new byte[_moves.Count];
+            _startNumIndex = _decryptMode ? _nums.Length - 1 : 0;
+            _decryptMode = false;
+            _bytes = Enumerable.Repeat((byte)_rnd.Next(256), 6).ToArray();
+            DoScramble();
+            _decryptMode = tmpMode;
+            if (_decryptMode)
+            {
+                _scramble = tmpScramble;
+                SetScramble(_scramble);
+            }
+        }
+
+        private void SaveBytes(byte[] bytes)
+        {
+            bytes[0] = _bytes[0];
+            bytes[1] = _bytes[1];
+            bytes[2] = _bytes[2];
+            bytes[3] = _bytes[3];
+            bytes[4] = _bytes[4];
+            bytes[5] = _bytes[5];
         }
 
         private void R()
@@ -178,7 +210,7 @@
             var maskGet = 0b10010100;
             var maskClear = 0b01101011;
             byte tus, tfs, tbs, tds;
-            var mud = (byte)_nums[_numIndex] + _lastMud;
+            var mud = _nums[_numIndex];
             if (_decryptMode)
             {
                 tus = (byte)(_bytes[0] - mud);
@@ -219,7 +251,7 @@
             var maskGet = 0b00101001;
             var maskClear = 0b11010110;//check
             byte tus, tfs, tbs, tds;
-            var mud = (byte)_nums[_numIndex] + _lastMud;
+            var mud = _nums[_numIndex];
             if (_decryptMode)
             {
                 tus = (byte)(_bytes[0] - mud);
@@ -260,7 +292,7 @@
             var maskClearForL = 0b01101011;
             var maskClearForU = 0b00011111;
             byte tus, tls, trs, tds;
-            var mud = (byte)_nums[_numIndex] + _lastMud;
+            var mud = _nums[_numIndex];
             if (_decryptMode)
             {
                 tus = (byte)(_bytes[0] - mud);
@@ -301,7 +333,7 @@
             var maskClearForL = 0b11010110;
             var maskClearForU = 0b11111000;
             byte tus, tls, trs, tds;
-            var mud = (byte)_nums[_numIndex] + _lastMud;
+            var mud = _nums[_numIndex];
             if (_decryptMode)
             {
                 tus = (byte)(_bytes[0] - mud);
@@ -340,7 +372,7 @@
             var maskClearForRFL = 0b11111000;
             var maskClearForB = 0b00011111;
             byte trs, tls, tfs, tbs;
-            var mud = (byte)_nums[_numIndex] + _lastMud;
+            var mud = _nums[_numIndex];
             if (_decryptMode)
             {
                 trs = (byte)(_bytes[3] - mud);
@@ -379,7 +411,7 @@
             var maskClearForRFL = 0b00011111;
             var maskClearForB = 0b11111000;
             byte trs, tls, tfs, tbs;
-            var mud = (byte)_nums[_numIndex] + _lastMud;
+            var mud = _nums[_numIndex];
             if (_decryptMode)
             {
                 trs = (byte)(_bytes[3] - mud);
@@ -418,7 +450,7 @@
             var maskGet = 0b10010100;
             var maskClear = 0b01101011;
             byte tus, tfs, tbs, tds;
-            var mud = (byte)_nums[_numIndex] + _lastMud;
+            var mud = _nums[_numIndex];
             if (_decryptMode)
             {
                 tus = (byte)(_bytes[0] - mud);
@@ -459,7 +491,7 @@
             var maskGet = 0b00101001;
             var maskClear = 0b11010110;//check
             byte tus, tfs, tbs, tds;
-            var mud = (byte)_nums[_numIndex] + _lastMud;
+            var mud = _nums[_numIndex];
             if (_decryptMode)
             {
                 tus = (byte)(_bytes[0] - mud);
@@ -500,7 +532,7 @@
             var maskClearForL = 0b01101011;
             var maskClearForU = 0b00011111;
             byte tus, tls, trs, tds;
-            var mud = (byte)_nums[_numIndex] + _lastMud;
+            var mud = _nums[_numIndex];
             if (_decryptMode)
             {
                 tus = (byte)(_bytes[0] - mud);
@@ -543,7 +575,7 @@
             var maskClearForL = 0b11010110;
             var maskClearForU = 0b11111000;
             byte tus, tls, trs, tds;
-            var mud = (byte)_nums[_numIndex] + _lastMud;
+            var mud = _nums[_numIndex];
             if (_decryptMode)
             {
                 tus = (byte)(_bytes[0] - mud);
@@ -582,7 +614,7 @@
             var maskClearForRFL = 0b11111000;
             var maskClearForB = 0b00011111;
             byte trs, tls, tfs, tbs;
-            var mud = (byte)_nums[_numIndex] + _lastMud;
+            var mud = _nums[_numIndex];
             if (_decryptMode)
             {
                 trs = (byte)(_bytes[3] - mud);
@@ -621,7 +653,7 @@
             var maskClearForRFL = 0b00011111;
             var maskClearForB = 0b11111000;
             byte trs, tls, tfs, tbs;
-            var mud = (byte)_nums[_numIndex] + _lastMud;
+            var mud = _nums[_numIndex];
             if (_decryptMode)
             {
                 trs = (byte)(_bytes[3] - mud);
@@ -660,7 +692,7 @@
             var maskClear = 0b10111101;
             var maskGet = 0b01000010;
             byte tus, tfs, tbs, tds;
-            var mud = (byte)_nums[_numIndex] + _lastMud;
+            var mud = _nums[_numIndex];
             if (_decryptMode)
             {
                 tus = (byte)(_bytes[0] - mud);
@@ -699,7 +731,7 @@
             var maskClear = 0b10111101;
             var maskGet = 0b01000010;
             byte tus, tfs, tbs, tds;
-            var mud = (byte)_nums[_numIndex] + _lastMud;
+            var mud = _nums[_numIndex];
             if (_decryptMode)
             {
                 tus = (byte)(_bytes[0] - mud);
@@ -738,7 +770,7 @@
             var maskClearUD = 0b11100111;
             var maskClearRL = 0b10111101;
             byte tus, tls, trs, tds;
-            var mud = (byte)_nums[_numIndex] + _lastMud;
+            var mud = _nums[_numIndex];
             if (_decryptMode)
             {
                 tus = (byte)(_bytes[0] - mud);
@@ -777,7 +809,7 @@
             var maskClearUD = 0b11100111;
             var maskClearRL = 0b10111101;
             byte tus, tls, trs, tds;
-            var mud = (byte)_nums[_numIndex] + _lastMud;
+            var mud = _nums[_numIndex];
             if (_decryptMode)
             {
                 tus = (byte)(_bytes[0] - mud);
@@ -814,7 +846,7 @@
             var maskClear = 0b11100111;
             var maskGetRFL = 0b00011000;
             byte trs, tls, tfs, tbs;
-            var mud = (byte)_nums[_numIndex] + _lastMud;
+            var mud = _nums[_numIndex];
             if (_decryptMode)
             {
                 trs = (byte)(_bytes[3] - mud);
@@ -853,7 +885,7 @@
             var maskClear = 0b11100111;
             var maskGetRFL = 0b00011000;
             byte trs, tls, tfs, tbs;
-            var mud = (byte)_nums[_numIndex] + _lastMud;
+            var mud = _nums[_numIndex];
             if (_decryptMode)
             {
                 trs = (byte)(_bytes[3] - mud);
