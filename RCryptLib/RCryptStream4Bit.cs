@@ -8,7 +8,7 @@
         public override bool LastWrite { get; set; }
         public override int BlockSizeInBytes => 24;
 
-        public RCryptStream4Bit(Stream baseStream, bool read, string scramble, int seed)
+        public RCryptStream4Bit(Stream baseStream, bool read, string scramble, ulong seed)
         {
             _stream = baseStream;
             _read = read;
@@ -126,20 +126,27 @@
         private byte[] _resultBytes = new byte[_blockSize];
         private List<Action> _moves = new List<Action>();
         private bool _decryptMode;
-        private Random _rnd;
+        //private Random _rnd;
         private byte[] _nums = Array.Empty<byte>();
         private byte[] _tmpBytes = new byte[_blockSize];
         private int _numIndex;
         private int _startNumIndex;
         private string _scramble;
 
-        public Cube4Bit(bool decrypt, int seed, string scramble)
+        public Cube4Bit(bool decrypt, ulong seed, string scramble)
         {
-            _decryptMode = decrypt;
-            _offset = _decryptMode ? -1 : 1;
-            _rnd = new Random(seed);
+            _offset = 1;
             _scramble = scramble;
-            InitFirstVector();
+            SetScramble(scramble);
+            InitFirstVector(seed);
+            if (decrypt)
+            {
+                _decryptMode = decrypt;
+                _scramble = ScrambleHelper.ReverseScramble(_scramble);
+                SetScramble(_scramble);
+            }
+            _startNumIndex = _decryptMode ? _nums.Length - 1 : 0;
+            _offset = _decryptMode ? -1 : 1;
         }
 
         public void Init(ref CubeBytes bytes) => _bytes = bytes;
@@ -184,6 +191,7 @@
             dict['S'] = () => addMove(S, AntiS);
             dict['E'] = () => addMove(E, AntiE);
             dict['M'] = () => addMove(M, AntiM);
+            dict['C'] = () => addMove(C, AntiC);
             for (i = 0; i < scramble.Length; ++i)
             {
                 if (dict.ContainsKey(scramble[i]))
@@ -222,36 +230,30 @@
             }
             SaveBytes(bytes);
             var tmpArr = _decryptMode ? _tmpBytes : bytes;
+            //rewrite vector
             for (int i = 0; i < _moves.Count; ++i)
                 _nums[i] = tmpArr[i % _blockSize];
         }
 
-        private void InitFirstVector()
+        private void InitFirstVector(ulong seed)
         {
-            var tmpMode = _decryptMode;
-            var tmpScramble = _scramble;
-            if (_decryptMode)
-                _scramble = ScrambleHelper.ReverseScramble(_scramble);
-            SetScramble(_scramble);
             _nums = new byte[_moves.Count];
-            _startNumIndex = _decryptMode ? _nums.Length - 1 : 0;
-            _decryptMode = false;
+            var rndSequence = new byte[_blockSize];
+            for (int i = 0; i < _blockSize; ++i)
+            { 
+                rndSequence[i] = (byte)(seed % 256);
+                seed = seed / 256 * 2333;
+            }
             _bytes = new CubeBytes
             {
-                U = new SideBytes { b1 = (byte)_rnd.Next(256), b2 = (byte)_rnd.Next(256), b3 = (byte)_rnd.Next(256), b4 = (byte)_rnd.Next(256) },
-                L = new SideBytes { b1 = (byte)_rnd.Next(256), b2 = (byte)_rnd.Next(256), b3 = (byte)_rnd.Next(256), b4 = (byte)_rnd.Next(256) },
-                F = new SideBytes { b1 = (byte)_rnd.Next(256), b2 = (byte)_rnd.Next(256), b3 = (byte)_rnd.Next(256), b4 = (byte)_rnd.Next(256) },
-                R = new SideBytes { b1 = (byte)_rnd.Next(256), b2 = (byte)_rnd.Next(256), b3 = (byte)_rnd.Next(256), b4 = (byte)_rnd.Next(256) },
-                B = new SideBytes { b1 = (byte)_rnd.Next(256), b2 = (byte)_rnd.Next(256), b3 = (byte)_rnd.Next(256), b4 = (byte)_rnd.Next(256) },
-                D = new SideBytes { b1 = (byte)_rnd.Next(256), b2 = (byte)_rnd.Next(256), b3 = (byte)_rnd.Next(256), b4 = (byte)_rnd.Next(256) },
+                U = new SideBytes { b1 = rndSequence[0], b2 = rndSequence[1], b3 = rndSequence[2], b4 = rndSequence[3] },
+                L = new SideBytes { b1 = rndSequence[4], b2 = rndSequence[5], b3 = rndSequence[6], b4 = rndSequence[7] },
+                F = new SideBytes { b1 = rndSequence[8], b2 = rndSequence[9], b3 = rndSequence[10], b4 = rndSequence[11] },
+                R = new SideBytes { b1 = rndSequence[12], b2 = rndSequence[13], b3 = rndSequence[14], b4 = rndSequence[15] },
+                B = new SideBytes { b1 = rndSequence[16], b2 = rndSequence[17], b3 = rndSequence[18], b4 = rndSequence[19] },
+                D = new SideBytes { b1 = rndSequence[20], b2 = rndSequence[21], b3 = rndSequence[22], b4 = rndSequence[23] },
             };
             DoScramble();
-            _decryptMode = tmpMode;
-            if (_decryptMode)
-            {
-                _scramble = tmpScramble;
-                SetScramble(_scramble);
-            }
         }
 
         private void SaveBytes(byte[] bytes)
@@ -1971,6 +1973,315 @@
             _numIndex += _offset;
         }
 
+        private void C()
+        {
+            SideBytes tfs;
+            SideBytes trs;
+            SideBytes tls;
+            SideBytes tbs;
+            SideBytes tus;
+            SideBytes tds;
+            var mud = (byte)(_nums[_numIndex]);
+            if (_decryptMode)
+            {
+                _bytes.F.b1 -= mud;
+                _bytes.F.b2 -= mud;
+                _bytes.F.b3 -= mud;
+                _bytes.F.b4 -= mud;
+
+                _bytes.B.b1 -= mud;
+                _bytes.B.b2 -= mud;
+                _bytes.B.b3 -= mud;
+                _bytes.B.b4 -= mud;
+
+                tfs = _bytes.F;
+                trs = _bytes.R;
+                tls = _bytes.L;
+                tbs = _bytes.B;
+                tus = _bytes.U;
+                tds = _bytes.D;
+                _bytes.F.b1 &= 0b11110000;
+                _bytes.F.b2 &= 0b11110000;
+                _bytes.F.b3 &= 0b00001111;
+                _bytes.F.b4 &= 0b00001111;
+                _bytes.F.b1 |= (byte)(tus.b3 >> 4 & 0b00001111);
+                _bytes.F.b2 |= (byte)(tus.b4 >> 4 & 0b00001111);
+                _bytes.F.b3 |= (byte)(tds.b1 << 4 & 0b11110000);
+                _bytes.F.b4 |= (byte)(tds.b2 << 4 & 0b11110000);
+
+                _bytes.U.b1 &= 0b11110000;
+                _bytes.U.b2 &= 0b11110000;
+                _bytes.U.b3 &= 0b00001111;
+                _bytes.U.b4 &= 0b00001111;
+                _bytes.U.b1 |= (byte)(tls.b1 & 0b00001111);
+                _bytes.U.b2 |= (byte)(trs.b2 & 0b00001111);
+                _bytes.U.b3 |= (byte)(tls.b2 << 4 & 0b11110000);
+                _bytes.U.b4 |= (byte)(trs.b1 << 4 & 0b11110000);
+
+                _bytes.B.b1 &= 0b11110000;
+                _bytes.B.b2 &= 0b11110000;
+                _bytes.B.b3 &= 0b00001111;
+                _bytes.B.b4 &= 0b00001111;
+                _bytes.B.b1 |= (byte)(tds.b3 >> 4 & 0b00001111);
+                _bytes.B.b2 |= (byte)(tds.b4 >> 4 & 0b00001111);
+                _bytes.B.b3 |= (byte)(tus.b1 << 4 & 0b11110000);
+                _bytes.B.b4 |= (byte)(tus.b2 << 4 & 0b11110000);
+
+                _bytes.D.b1 &= 0b11110000;
+                _bytes.D.b2 &= 0b11110000;
+                _bytes.D.b3 &= 0b00001111;
+                _bytes.D.b4 &= 0b00001111;
+                _bytes.D.b1 |= (byte)(tls.b4 >> 4 & 0b00001111);
+                _bytes.D.b2 |= (byte)(trs.b3 >> 4 & 0b00001111);
+                _bytes.D.b3 |= (byte)(tls.b3 & 0b11110000);
+                _bytes.D.b4 |= (byte)(trs.b4 & 0b11110000);
+
+                _bytes.R.b1 &= 0b11110000;
+                _bytes.R.b2 &= 0b11110000;
+                _bytes.R.b3 &= 0b00001111;
+                _bytes.R.b4 &= 0b00001111;
+                _bytes.R.b1 |= (byte)(tfs.b2 & 0b00001111);
+                _bytes.R.b2 |= (byte)(tbs.b4 >> 4 & 0b00001111);
+                _bytes.R.b3 |= (byte)(tfs.b4 & 0b11110000);
+                _bytes.R.b4 |= (byte)(tbs.b2 << 4 & 0b11110000);
+
+                _bytes.L.b1 &= 0b11110000;
+                _bytes.L.b2 &= 0b11110000;
+                _bytes.L.b3 &= 0b00001111;
+                _bytes.L.b4 &= 0b00001111;
+                _bytes.L.b1 |= (byte)(tbs.b3 >> 4 & 0b00001111);
+                _bytes.L.b2 |= (byte)(tfs.b1 & 0b00001111);
+                _bytes.L.b3 |= (byte)(tbs.b1 << 4 & 0b11110000);
+                _bytes.L.b4 |= (byte)(tfs.b3 & 0b11110000);
+            }
+            else
+            {
+                tfs = _bytes.F;
+                trs = _bytes.R;
+                tls = _bytes.L;
+                tbs = _bytes.B;
+                tus = _bytes.U;
+                tds = _bytes.D;
+                _bytes.F.b1 &= 0b11110000;
+                _bytes.F.b2 &= 0b11110000;
+                _bytes.F.b3 &= 0b00001111;
+                _bytes.F.b4 &= 0b00001111;
+                _bytes.F.b1 |= (byte)(tus.b3 >> 4 & 0b00001111);
+                _bytes.F.b2 |= (byte)(tus.b4 >> 4 & 0b00001111);
+                _bytes.F.b3 |= (byte)(tds.b1 << 4 & 0b11110000);
+                _bytes.F.b4 |= (byte)(tds.b2 << 4 & 0b11110000);
+                _bytes.F.b1 += mud;
+                _bytes.F.b2 += mud;
+                _bytes.F.b3 += mud;
+                _bytes.F.b4 += mud;
+
+                _bytes.U.b1 &= 0b11110000;
+                _bytes.U.b2 &= 0b11110000;
+                _bytes.U.b3 &= 0b00001111;
+                _bytes.U.b4 &= 0b00001111;
+                _bytes.U.b1 |= (byte)(tls.b1 & 0b00001111);
+                _bytes.U.b2 |= (byte)(trs.b2 & 0b00001111);
+                _bytes.U.b3 |= (byte)(tls.b2 << 4 & 0b11110000);
+                _bytes.U.b4 |= (byte)(trs.b1 << 4 & 0b11110000);
+
+                _bytes.B.b1 &= 0b11110000;
+                _bytes.B.b2 &= 0b11110000;
+                _bytes.B.b3 &= 0b00001111;
+                _bytes.B.b4 &= 0b00001111;
+                _bytes.B.b1 |= (byte)(tds.b3 >> 4 & 0b00001111);
+                _bytes.B.b2 |= (byte)(tds.b4 >> 4 & 0b00001111);
+                _bytes.B.b3 |= (byte)(tus.b1 << 4 & 0b11110000);
+                _bytes.B.b4 |= (byte)(tus.b2 << 4 & 0b11110000);
+                _bytes.B.b1 += mud;
+                _bytes.B.b2 += mud;
+                _bytes.B.b3 += mud;
+                _bytes.B.b4 += mud;
+
+                _bytes.D.b1 &= 0b11110000;
+                _bytes.D.b2 &= 0b11110000;
+                _bytes.D.b3 &= 0b00001111;
+                _bytes.D.b4 &= 0b00001111;
+                _bytes.D.b1 |= (byte)(tls.b4 >> 4 & 0b00001111);
+                _bytes.D.b2 |= (byte)(trs.b3 >> 4 & 0b00001111);
+                _bytes.D.b3 |= (byte)(tls.b3 & 0b11110000);
+                _bytes.D.b4 |= (byte)(trs.b4 & 0b11110000);
+
+                _bytes.R.b1 &= 0b11110000;
+                _bytes.R.b2 &= 0b11110000;
+                _bytes.R.b3 &= 0b00001111;
+                _bytes.R.b4 &= 0b00001111;
+                _bytes.R.b1 |= (byte)(tfs.b2 & 0b00001111);
+                _bytes.R.b2 |= (byte)(tbs.b4 >> 4 & 0b00001111);
+                _bytes.R.b3 |= (byte)(tfs.b4 & 0b11110000);
+                _bytes.R.b4 |= (byte)(tbs.b2 << 4 & 0b11110000);
+
+                _bytes.L.b1 &= 0b11110000;
+                _bytes.L.b2 &= 0b11110000;
+                _bytes.L.b3 &= 0b00001111;
+                _bytes.L.b4 &= 0b00001111;
+                _bytes.L.b1 |= (byte)(tbs.b3 >> 4 & 0b00001111);
+                _bytes.L.b2 |= (byte)(tfs.b1 & 0b00001111);
+                _bytes.L.b3 |= (byte)(tbs.b1 << 4 & 0b11110000);
+                _bytes.L.b4 |= (byte)(tfs.b3 & 0b11110000);
+            }
+            _numIndex += _offset;
+        }
+
+        private void AntiC() 
+        {
+
+            SideBytes tfs;
+            SideBytes trs;
+            SideBytes tls;
+            SideBytes tbs;
+            SideBytes tus;
+            SideBytes tds;
+            var mud = (byte)(_nums[_numIndex]);
+            if (_decryptMode)
+            {
+                _bytes.F.b1 -= mud;
+                _bytes.F.b2 -= mud;
+                _bytes.F.b3 -= mud;
+                _bytes.F.b4 -= mud;
+
+                _bytes.B.b1 -= mud;
+                _bytes.B.b2 -= mud;
+                _bytes.B.b3 -= mud;
+                _bytes.B.b4 -= mud;
+
+                tfs = _bytes.F;
+                trs = _bytes.R;
+                tls = _bytes.L;
+                tbs = _bytes.B;
+                tus = _bytes.U;
+                tds = _bytes.D;
+                _bytes.F.b1 &= 0b11110000;
+                _bytes.F.b2 &= 0b11110000;
+                _bytes.F.b3 &= 0b00001111;
+                _bytes.F.b4 &= 0b00001111;
+                _bytes.F.b1 |= (byte)(tls.b2 & 0b00001111);
+                _bytes.F.b2 |= (byte)(trs.b1 & 0b00001111);
+                _bytes.F.b3 |= (byte)(tls.b4 & 0b11110000);
+                _bytes.F.b4 |= (byte)(trs.b3 & 0b11110000);
+
+                _bytes.U.b1 &= 0b11110000;
+                _bytes.U.b2 &= 0b11110000;
+                _bytes.U.b3 &= 0b00001111;
+                _bytes.U.b4 &= 0b00001111;
+                _bytes.U.b1 |= (byte)(tbs.b3 >> 4 & 0b00001111);
+                _bytes.U.b2 |= (byte)(tbs.b4 >> 4 & 0b00001111);
+                _bytes.U.b3 |= (byte)(tfs.b1 << 4 & 0b11110000);
+                _bytes.U.b4 |= (byte)(tfs.b2 << 4 & 0b11110000);
+
+                _bytes.B.b1 &= 0b11110000;
+                _bytes.B.b2 &= 0b11110000;
+                _bytes.B.b3 &= 0b00001111;
+                _bytes.B.b4 &= 0b00001111;
+                _bytes.B.b1 |= (byte)(tls.b3 >> 4 & 0b00001111);
+                _bytes.B.b2 |= (byte)(trs.b4 >> 4 & 0b00001111);
+                _bytes.B.b3 |= (byte)(tls.b1 << 4 & 0b11110000);
+                _bytes.B.b4 |= (byte)(trs.b2 << 4 & 0b11110000);
+
+                _bytes.D.b1 &= 0b11110000;
+                _bytes.D.b2 &= 0b11110000;
+                _bytes.D.b3 &= 0b00001111;
+                _bytes.D.b4 &= 0b00001111;
+                _bytes.D.b1 |= (byte)(tfs.b3 >> 4 & 0b00001111);
+                _bytes.D.b2 |= (byte)(tfs.b4 >> 4 & 0b00001111);
+                _bytes.D.b3 |= (byte)(tbs.b1 << 4 & 0b11110000);
+                _bytes.D.b4 |= (byte)(tbs.b2 << 4 & 0b11110000);
+
+                _bytes.R.b1 &= 0b11110000;
+                _bytes.R.b2 &= 0b11110000;
+                _bytes.R.b3 &= 0b00001111;
+                _bytes.R.b4 &= 0b00001111;
+                _bytes.R.b1 |= (byte)(tus.b4 >> 4 & 0b00001111);
+                _bytes.R.b2 |= (byte)(tus.b2 & 0b00001111);
+                _bytes.R.b3 |= (byte)(tds.b2 << 4 & 0b11110000);
+                _bytes.R.b4 |= (byte)(tds.b4 & 0b11110000);
+
+                _bytes.L.b1 &= 0b11110000;
+                _bytes.L.b2 &= 0b11110000;
+                _bytes.L.b3 &= 0b00001111;
+                _bytes.L.b4 &= 0b00001111;
+                _bytes.L.b1 |= (byte)(tus.b1 & 0b00001111);
+                _bytes.L.b2 |= (byte)(tus.b3 >> 4 & 0b00001111);
+                _bytes.L.b3 |= (byte)(tds.b3 & 0b11110000);
+                _bytes.L.b4 |= (byte)(tds.b1 << 4 & 0b11110000);
+            }
+            else
+            {
+                tfs = _bytes.F;
+                trs = _bytes.R;
+                tls = _bytes.L;
+                tbs = _bytes.B;
+                tus = _bytes.U;
+                tds = _bytes.D;
+                _bytes.F.b1 &= 0b11110000;
+                _bytes.F.b2 &= 0b11110000;
+                _bytes.F.b3 &= 0b00001111;
+                _bytes.F.b4 &= 0b00001111;
+                _bytes.F.b1 |= (byte)(tls.b2 & 0b00001111);
+                _bytes.F.b2 |= (byte)(trs.b1 & 0b00001111);
+                _bytes.F.b3 |= (byte)(tls.b4 & 0b11110000);
+                _bytes.F.b4 |= (byte)(trs.b3 & 0b11110000);
+
+                _bytes.U.b1 &= 0b11110000;
+                _bytes.U.b2 &= 0b11110000;
+                _bytes.U.b3 &= 0b00001111;
+                _bytes.U.b4 &= 0b00001111;
+                _bytes.U.b1 |= (byte)(tbs.b3 >> 4 & 0b00001111);
+                _bytes.U.b2 |= (byte)(tbs.b4 >> 4 & 0b00001111);
+                _bytes.U.b3 |= (byte)(tfs.b1 << 4 & 0b11110000);
+                _bytes.U.b4 |= (byte)(tfs.b2 << 4 & 0b11110000);
+
+                _bytes.B.b1 &= 0b11110000;
+                _bytes.B.b2 &= 0b11110000;
+                _bytes.B.b3 &= 0b00001111;
+                _bytes.B.b4 &= 0b00001111;
+                _bytes.B.b1 |= (byte)(tls.b3 >> 4 & 0b00001111);
+                _bytes.B.b2 |= (byte)(trs.b4 >> 4 & 0b00001111);
+                _bytes.B.b3 |= (byte)(tls.b1 << 4 & 0b11110000);
+                _bytes.B.b4 |= (byte)(trs.b2 << 4 & 0b11110000);
+
+                _bytes.D.b1 &= 0b11110000;
+                _bytes.D.b2 &= 0b11110000;
+                _bytes.D.b3 &= 0b00001111;
+                _bytes.D.b4 &= 0b00001111;
+                _bytes.D.b1 |= (byte)(tfs.b3 >> 4 & 0b00001111);
+                _bytes.D.b2 |= (byte)(tfs.b4 >> 4 & 0b00001111);
+                _bytes.D.b3 |= (byte)(tbs.b1 << 4 & 0b11110000);
+                _bytes.D.b4 |= (byte)(tbs.b2 << 4 & 0b11110000);
+
+                _bytes.R.b1 &= 0b11110000;
+                _bytes.R.b2 &= 0b11110000;
+                _bytes.R.b3 &= 0b00001111;
+                _bytes.R.b4 &= 0b00001111;
+                _bytes.R.b1 |= (byte)(tus.b4 >> 4 & 0b00001111);
+                _bytes.R.b2 |= (byte)(tus.b2 & 0b00001111);
+                _bytes.R.b3 |= (byte)(tds.b2 << 4 & 0b11110000);
+                _bytes.R.b4 |= (byte)(tds.b4 & 0b11110000);
+
+                _bytes.L.b1 &= 0b11110000;
+                _bytes.L.b2 &= 0b11110000;
+                _bytes.L.b3 &= 0b00001111;
+                _bytes.L.b4 &= 0b00001111;
+                _bytes.L.b1 |= (byte)(tus.b1 & 0b00001111);
+                _bytes.L.b2 |= (byte)(tus.b3 >> 4 & 0b00001111);
+                _bytes.L.b3 |= (byte)(tds.b3 & 0b11110000);
+                _bytes.L.b4 |= (byte)(tds.b1 << 4 & 0b11110000);
+                _bytes.F.b1 += mud;
+                _bytes.F.b2 += mud;
+                _bytes.F.b3 += mud;
+                _bytes.F.b4 += mud;
+
+                _bytes.B.b1 += mud;
+                _bytes.B.b2 += mud;
+                _bytes.B.b3 += mud;
+                _bytes.B.b4 += mud;
+            }
+            _numIndex += _offset;
+        }
         private void MoveSideClockwise(ref SideBytes side)
         {
             var ts = side;

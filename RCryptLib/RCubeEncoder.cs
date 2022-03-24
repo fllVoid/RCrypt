@@ -1,11 +1,16 @@
-﻿namespace RCryptLib
+﻿using System.Numerics;
+using System.Security.Cryptography;
+using System.Text;
+
+namespace RCryptLib
 {
     public class RCubeEncoder
     {
         TextWriter _errorOutput;
         Action<double>? _printProgress;
         readonly string _otherLetters;
-        readonly string _movesLetters = "BDEFLMRSU";
+        readonly string _movesLetters = "BCDEFLMRSU";
+        const int keySize = 24;
 
         public RCubeEncoder(TextWriter errorOutput, Action<double>? printProgress)
         {
@@ -18,35 +23,35 @@
         public bool EncryptFile1BitMode(string sourcePath, string resultPath, string key)
         {
             return EncryptFile(sourcePath, resultPath, key,
-                (writeStream, decrypt, scramble, seed) => new RCryptStream1Bit(writeStream, decrypt, scramble, seed));
+                (writeStream, decrypt, tupleKeySeed) => new RCryptStream1Bit(writeStream, decrypt, tupleKeySeed.Item1, tupleKeySeed.Item2));
         }
 
         public bool DecryptFile1BitMode(string sourcePath, string resultPath, string key)
         {
             return DecryptFile(sourcePath, resultPath, key,
-                (writeStream, decrypt, scramble, seed) => new RCryptStream1Bit(writeStream, decrypt, scramble, seed));
+                (writeStream, decrypt, tupleKeySeed) => new RCryptStream1Bit(writeStream, decrypt, tupleKeySeed.Item1, tupleKeySeed.Item2));
         }
 
         public bool EncryptFile4BitMode(string sourcePath, string resultPath, string key)
         {
             return EncryptFile(sourcePath, resultPath, key,
-                (writeStream, decrypt, scramble, seed) => new RCryptStream4Bit(writeStream, decrypt, scramble, seed));
+                (writeStream, decrypt, tupleKeySeed) => new RCryptStream4Bit(writeStream, decrypt, tupleKeySeed.Item1, tupleKeySeed.Item2));
         }
 
         public bool DecryptFile4BitMode(string sourcePath, string resultPath, string key)
         {
             return DecryptFile(sourcePath, resultPath, key,
-                (writeStream, decrypt, scramble, seed) => new RCryptStream4Bit(writeStream, decrypt, scramble, seed));
+                (writeStream, decrypt, tupleKeySeed) => new RCryptStream4Bit(writeStream, decrypt, tupleKeySeed.Item1, tupleKeySeed.Item2));
         }
 
         public bool EncryptFile(
             string sourcePath,
             string resultPath,
             string key,
-            Func<Stream, bool, string, int, RCryptStream> generateStream)
+            Func<Stream, bool, (string, ulong), RCryptStream> generateStream)
         {
             var seed = key.GetCustomHashCode();
-            key = HandleKey(key);
+            var tupleKeySeed = HandleKey(key);
             Task? printProgressTask = null;
             var cancelSource = new CancellationTokenSource();
             try
@@ -55,7 +60,7 @@
                     File.Delete(resultPath);
                 using (var fileWriteStream = new BufferedStream(File.OpenWrite(resultPath), 1024 * 4))
                 using (var readStream = new BufferedStream(File.OpenRead(sourcePath), 1024 * 4))
-                using (var cryptStream = generateStream(fileWriteStream, false, key, seed))
+                using (var cryptStream = generateStream(fileWriteStream, false, tupleKeySeed))
                 {
                     var bufferSize = cryptStream.BlockSizeInBytes;
                     var progress = new Progress(readStream);
@@ -88,12 +93,12 @@
             string sourcePath,
             string resultPath,
             string key,
-            Func<Stream, bool, string, int, RCryptStream> generateStream)
+            Func<Stream, bool, (string, ulong), RCryptStream> generateStream)
         {
             var seed = key.GetCustomHashCode();
             if (File.Exists(resultPath))
                 File.Delete(resultPath);
-            key = HandleKey(key);
+            var tupleKeySeed = HandleKey(key);
             Task? printProgressTask = null;
             var cancelSource = new CancellationTokenSource();
             try
@@ -101,7 +106,7 @@
                 if (File.Exists(resultPath))
                     File.Delete(resultPath);
                 using (var fileReadStream = new BufferedStream(File.OpenRead(sourcePath), 1024 * 4))
-                using (var cryptStream = generateStream(fileReadStream, true, ScrambleHelper.ReverseScramble(key), seed))
+                using (var cryptStream = generateStream(fileReadStream, true, tupleKeySeed))
                 using (var writeStream = new BufferedStream(File.OpenWrite(resultPath), 1024 * 4))
                 {
                     var bufferSize = cryptStream.BlockSizeInBytes;
@@ -129,19 +134,21 @@
             }
         }
 
-        private string HandleKey(string key)
+        private (string, ulong) HandleKey(string key)
         {
-            var outKey = key.ToArray();
-            for (int i = 0; i < outKey.Length; i++)
+            var ba = SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(key));
+            var hex = $"0{BitConverter.ToString(ba).Replace("-", "")}";
+            var hash = BigInteger.Parse(hex, System.Globalization.NumberStyles.AllowHexSpecifier).ToString();
+            var result = new List<char>();
+            for (int i = 0; i < keySize; ++i)
             {
-                if (!_movesLetters.Contains(outKey[i]))
-                {
-                    var index = _otherLetters.IndexOf(outKey[i]);
-                    if (index != -1)
-                        outKey[i] = _movesLetters[index % _movesLetters.Length];
-                }
+                result.Add(_movesLetters[hash[i] - '0']);
+                if (hash[hash.Length - 1 - i] > '4')
+                    result.Add('\'');
             }
-            return new string(outKey);
+            var seedSource = hash.Substring(keySize, hash.Length - keySize * 2);
+            var seed = UInt64.Parse(seedSource[..19]) * UInt64.Parse(seedSource[19..]);
+            return (new string(result.ToArray()), seed);
         }
 
         private string Shuffle(string str, Random random)

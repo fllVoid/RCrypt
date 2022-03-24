@@ -8,7 +8,7 @@
         public override bool LastWrite { get; set; }
         public override int BlockSizeInBytes => 6;
 
-        public RCryptStream1Bit(Stream baseStream, bool read, string scramble, int seed)
+        public RCryptStream1Bit(Stream baseStream, bool read, string scramble, ulong seed)
         {
             _stream = baseStream;
             _read = read;
@@ -89,20 +89,26 @@
         private byte[] _tmpBytes = new byte[_blockSize];
         private List<Action> _moves = new List<Action>();
         private bool _decryptMode;
-        private Random _rnd;
         private byte[] _nums = Array.Empty<byte>();
         private int _numIndex;
         private int _startNumIndex;
         private int _offset;
         private string _scramble;
 
-        public Cube1Bit(bool decrypt, int seed, string scramble)
+        public Cube1Bit(bool decrypt, ulong seed, string scramble)
         {
-            _decryptMode = decrypt;
-            _offset = _decryptMode ? -1 : 1;
-            _rnd = new Random(seed);
+            _offset = 1;
             _scramble = scramble;
-            InitFirstVector();
+            SetScramble(scramble);
+            InitFirstVector(seed);
+            if (decrypt)
+            {
+                _decryptMode = decrypt;
+                _scramble = ScrambleHelper.ReverseScramble(_scramble);
+                SetScramble(_scramble);
+            }
+            _startNumIndex = _decryptMode ? _nums.Length - 1 : 0;
+            _offset = _decryptMode ? -1 : 1;
         }
 
         public void Init(byte b1, byte b2, byte b3, byte b4, byte b5, byte b6)
@@ -150,6 +156,7 @@
             dict['S'] = () => addMove(S, AntiS);
             dict['E'] = () => addMove(E, AntiE);
             dict['M'] = () => addMove(M, AntiM);
+            dict['C'] = () => addMove(C, AntiC);
             for (i = 0; i < scramble.Length; ++i)
             {
                 if (dict.ContainsKey(scramble[i]))
@@ -175,24 +182,15 @@
             return _bytes;
         }
 
-        private void InitFirstVector()
+        private void InitFirstVector(ulong seed)
         {
-            var tmpMode = _decryptMode;
-            var tmpScramble = _scramble;
-            if (_decryptMode)
-                _scramble = ScrambleHelper.ReverseScramble(_scramble);
-            SetScramble(_scramble);
             _nums = new byte[_moves.Count];
-            _startNumIndex = _decryptMode ? _nums.Length - 1 : 0;
-            _decryptMode = false;
-            _bytes = Enumerable.Repeat((byte)_rnd.Next(256), 6).ToArray();
-            DoScramble();
-            _decryptMode = tmpMode;
-            if (_decryptMode)
+            for (int i = 0; i < _blockSize; ++i)
             {
-                _scramble = tmpScramble;
-                SetScramble(_scramble);
+                _bytes[i] = (byte)(seed % 256);
+                seed = seed / 256 * 2333;
             }
+            DoScramble();
         }
 
         private void SaveBytes(byte[] bytes)
@@ -917,6 +915,120 @@
             _numIndex += _offset;
         }
 
+        private void C()
+        {
+            var maskClear = 0b01011010;
+            byte trs, tls, tfs, tbs, tus, tds;
+            var mud = _nums[_numIndex];
+            if (_decryptMode)
+            {
+                tus = _bytes[0];
+                tls = _bytes[1];
+                tfs = (byte)(_bytes[2] - mud);
+                trs = _bytes[3];
+                tbs = (byte)(_bytes[4] - mud);
+                tds = _bytes[5];
+
+                _bytes[2] = (byte)(tfs & maskClear | tus >> 5 & 0b00000101 | tds << 5 & 0b10100000);
+
+                _bytes[0] = (byte)(tus & maskClear | tls & 0b00000001 | tls << 3 & 0b00100000
+                    | trs & 0b00000100 | trs << 7 & 0b10000000);
+
+                _bytes[4] = (byte)(tbs & maskClear | tds >> 5 & 0b00000101 | tus << 5 & 0b10100000);
+
+                _bytes[5] = (byte)(tds & maskClear | trs & 0b10000000 | trs >> 3 & 0b00000100
+                    | tls & 0b00100000 | tls >> 7 & 0b00000001);
+
+                _bytes[1] = (byte)(tls & maskClear | tbs >> 5 & 0b00000001 | tbs << 5 & 0b00100000
+                    | tfs << 2 & 0b10000100);
+
+                _bytes[3] = (byte)(trs & maskClear | tbs >> 5 & 0b00000100 | tbs << 5 & 0b10000000
+                    | tfs >> 2 & 0b00100001);
+            }
+            else
+            {
+                tus = _bytes[0];
+                tls = _bytes[1];
+                tfs = _bytes[2];
+                trs = _bytes[3];
+                tbs = _bytes[4];
+                tds = _bytes[5];
+
+                _bytes[2] = (byte)((tfs & maskClear | tus >> 5 & 0b00000101 | tds << 5 & 0b10100000) + mud);//
+
+                _bytes[0] = (byte)(tus & maskClear | tls & 0b00000001 | tls << 3 & 0b00100000
+                    | trs & 0b00000100 | trs << 7 & 0b10000000);//
+
+                _bytes[4] = (byte)((tbs & maskClear | tds >> 5 & 0b00000101 | tus << 5 & 0b10100000) + mud);//
+
+                _bytes[5] = (byte)(tds & maskClear | trs & 0b10000000 | trs >> 3 & 0b00000100
+                    | tls & 0b00100000 | tls >> 7 & 0b00000001);//
+
+                _bytes[1] = (byte)(tls & maskClear | tbs >> 5 & 0b00000001 | tbs << 5 & 0b00100000
+                    | tfs << 2 & 0b10000100);
+
+                _bytes[3] = (byte)(trs & maskClear | tbs >> 5 & 0b00000100 | tbs << 5 & 0b10000000
+                    | tfs >> 2 & 0b00100001);
+            }
+            _numIndex += _offset;
+        }
+
+        private void AntiC()
+        {
+            var maskClear = 0b01011010;
+            byte trs, tls, tfs, tbs, tus, tds;
+            var mud = _nums[_numIndex];
+            if (_decryptMode)
+            {
+                tus = _bytes[0];
+                tls = _bytes[1];
+                tfs = (byte)(_bytes[2] - mud);
+                trs = _bytes[3];
+                tbs = (byte)(_bytes[4] - mud);
+                tds = _bytes[5];
+
+                _bytes[2] = (byte)(tfs & maskClear | trs << 2 & 0b10000100 | tls >> 2 & 0b00100001);
+
+                _bytes[0] = (byte)(tus & maskClear | tbs >> 5 & 0b00000101 | tfs << 5 & 0b10100000);
+
+                _bytes[4] = (byte)(tbs & maskClear | trs << 5 & 0b10000000 | trs >> 5 & 0b00000100
+                    | tls >> 5 & 0b00000001 | tls << 5 & 0b00100000);
+
+                _bytes[5] = (byte)(tds & maskClear | tfs >> 5 & 0b00000101 | tbs << 5 & 0b10100000);
+
+                _bytes[1] = (byte)(tls & maskClear | tus & 0b00000001 | tus >> 3 & 0b00000100
+                    | tds & 0b00100000 | tds << 7 & 0b10000000);
+
+                _bytes[3] = (byte)(trs & maskClear | tds & 0b10000000 | tds << 3 & 0b00100000
+                    | tus & 0b00000100 | tus >> 7 & 0b00000001);
+            }
+            else
+            {
+                tus = _bytes[0];
+                tls = _bytes[1];
+                tfs = _bytes[2];
+                trs = _bytes[3];
+                tbs = _bytes[4];
+                tds = _bytes[5];
+
+                _bytes[2] = (byte)((tfs & maskClear | trs << 2 & 0b10000100 | tls >> 2 & 0b00100001) + mud);//
+
+                _bytes[0] = (byte)(tus & maskClear | tbs >> 5 & 0b00000101 | tfs << 5 & 0b10100000);//
+
+                _bytes[4] = (byte)((tbs & maskClear | trs << 5 & 0b10000000 | trs >> 5 & 0b00000100
+                    | tls >> 5 & 0b00000001 | tls << 5 & 0b00100000) + mud);//
+
+                _bytes[5] = (byte)(tds & maskClear | tfs >> 5 & 0b00000101 | tbs << 5 & 0b10100000);//
+
+                _bytes[1] = (byte)(tls & maskClear | tus & 0b00000001 | tus >> 3 & 0b00000100
+                    | tds & 0b00100000 | tds << 7 & 0b10000000);//
+
+                _bytes[3] = (byte)(trs & maskClear | tds & 0b10000000 | tds << 3 & 0b00100000
+                    | tus & 0b00000100 | tus >> 7 & 0b00000001);
+            }
+            _numIndex += _offset;
+        }
+
         private void MoveSideClockwise(int sideIndex)
         {
             var ts = _bytes[sideIndex];
@@ -930,6 +1042,5 @@
             _bytes[sideIndex] = (byte)(ts >> 2 & 0b00010001 | ts >> 3 & 0b00000010 | ts >> 5 & 0b00000100
                 | ts << 2 & 0b10001000 | ts << 3 & 0b01000000 | ts << 5 & 0b00100000);
         }
-
     }
 }
