@@ -182,7 +182,7 @@
             return _bytes;
         }
 
-        private void InitFirstVector(ulong seed)
+        private void InitFirstVector(ulong seed)    
         {
             _nums = new byte[_moves.Count];
             for (int i = 0; i < _blockSize; ++i)

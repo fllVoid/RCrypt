@@ -135,6 +135,7 @@
 
         public Cube4Bit(bool decrypt, ulong seed, string scramble)
         {
+            //scramble = "R";
             _offset = 1;
             _scramble = scramble;
             SetScramble(scramble);

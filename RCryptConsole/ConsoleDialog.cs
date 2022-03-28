@@ -18,7 +18,7 @@ namespace RCryptConsole
 
         public ConsoleDialog()
         {
-            encoder = new RCubeEncoder(Console.Out, PrintProgress);
+            encoder = new RCubeEncoder(Console.Out, PrintProgress, Console.InputEncoding);
         }
 
         public void Start()
@@ -49,6 +49,9 @@ namespace RCryptConsole
                     case "help":
                         _out.WriteLine(helpMessage);
                         break;
+                    case "clrscr":
+                        Console.Clear();
+                        break;
                     case "exit":
                         return;
                     default:
@@ -60,15 +63,17 @@ namespace RCryptConsole
 
         private void ExecuteCommandWithArguments(Func<string, string, string, bool> function, params string[] args)
         {
+            Console.CursorVisible = false;
             if (args.Length < 3)
                 _out.WriteLine(forgotArgMessage);
             else
             {
-                if (function(args[0], args[1], args[2].ToUpper()))
+                if (function(args[0], args[1], args[2]))
                     _out.WriteLine($"\n{successMessage}");
                 else
                     _out.WriteLine($"\n{failedMessage}");
             }
+            Console.CursorVisible = true;
         }
 
         private void PrintProgress(double progress)

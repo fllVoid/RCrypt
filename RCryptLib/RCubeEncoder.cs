@@ -8,16 +8,16 @@ namespace RCryptLib
     {
         TextWriter _errorOutput;
         Action<double>? _printProgress;
-        readonly string _otherLetters;
         readonly string _movesLetters = "BCDEFLMRSU";
         const int keySize = 24;
+        Encoding _encoding;
 
-        public RCubeEncoder(TextWriter errorOutput, Action<double>? printProgress)
+        public RCubeEncoder(TextWriter errorOutput, Action<double>? printProgress, Encoding encoding)
         {
-            var alph = "ACGHIJKNOPQTVWXYZ134567890";
+            _encoding = encoding;
             _errorOutput = errorOutput;
             _printProgress = printProgress;
-            _otherLetters = Shuffle(alph, new Random(alph.GetCustomHashCode()));
+            //_otherLetters = Shuffle(alph, new Random(alph.GetCustomHashCode()));
         }
 
         public bool EncryptFile1BitMode(string sourcePath, string resultPath, string key)
@@ -136,7 +136,7 @@ namespace RCryptLib
 
         private (string, ulong) HandleKey(string key)
         {
-            var ba = SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(key));
+            var ba = SHA256.Create().ComputeHash(_encoding.GetBytes(key));
             var hex = $"0{BitConverter.ToString(ba).Replace("-", "")}";
             var hash = BigInteger.Parse(hex, System.Globalization.NumberStyles.AllowHexSpecifier).ToString();
             var result = new List<char>();
